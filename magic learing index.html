@@ -1,0 +1,2836 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>魔法學院：學徒奧術門戶 v3.6 終極智慧版</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome 圖示 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts 兒童與溫馨字體 -->
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Fredoka:wght@400;600;700&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet">
+    <!-- KaTeX for beautiful math equations -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js" type="module"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js" type="module"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js" type="module"></script>
+
+    <style>
+        body {
+            font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
+            background-color: #f0f9ff;
+            color: #1e293b;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(253, 244, 245, 0.9) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(254, 243, 199, 0.9) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(240, 253, 250, 0.9) 0%, transparent 50%);
+        }
+        .magic-title {
+            font-family: 'Fredoka', 'Noto Serif TC', serif;
+        }
+        .bubble-card {
+            background: #ffffff;
+            border: 4px solid #fef08a;
+            border-bottom-width: 8px;
+            border-right-width: 6px;
+            border-radius: 2rem;
+            box-shadow: 0 10px 0px rgba(251, 191, 36, 0.15);
+            transition: all 0.2s ease;
+        }
+        .bubble-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 0px rgba(251, 191, 36, 0.2);
+        }
+        .candy-btn {
+            font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
+            border-bottom: 4px solid currentColor;
+            border-right: 2px solid currentColor;
+            transition: all 0.1s active;
+        }
+        .candy-btn:active {
+            transform: translate(1px, 2px);
+            border-bottom-width: 1px;
+            border-right-width: 1px;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; border: 2px solid #f1f5f9; }
+        ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+        
+        .clock-face {
+            background: #fff;
+            border: 8px solid #fef08a;
+            border-bottom-width: 12px;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+        .clock-hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            border-radius: 99px;
+        }
+        .hour-hand { width: 8px; height: 38px; background-color: #334155; margin-left: -4px; }
+        .minute-hand { width: 6px; height: 55px; background-color: #ef4444; margin-left: -3px; cursor: grab; }
+        
+        #scratchpad, #geometry-canvas, #unit-canvas, #practice-scratchpad { touch-action: none; cursor: crosshair; }
+        #geometry-canvas, #unit-canvas {
+            background-color: #ffffff;
+            background-image: 
+                linear-gradient(to right, #cbd5e1 1px, transparent 1px),
+                linear-gradient(to bottom, #cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        @keyframes playful-bounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.05); }
+        }
+        .pet-active { animation: playful-bounce 1.5s infinite ease-in-out; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden font-sans">
+
+    <!-- 頂部繽紛導覽列 -->
+    <header class="bg-white/95 backdrop-blur-md border-b-4 border-yellow-300 py-3 px-6 flex flex-col md:flex-row justify-between items-center shadow-md sticky top-0 z-40 gap-3 md:gap-0">
+        <div class="flex items-center space-x-3">
+            <span class="text-4xl animate-bounce">🦄</span>
+            <div>
+                <h1 class="text-lg md:text-xl font-black magic-title text-pink-500 tracking-wider flex items-center">
+                    奧術學院：學徒門戶 
+                    <span class="text-[10px] bg-amber-400 text-slate-800 px-2 py-0.5 rounded-full ml-1.5 font-bold font-sans">v3.6 終極智慧版</span>
+                </h1>
+                <!-- 即時氣象與時空日曆 -->
+                <p id="top-time-weather" class="text-[10px] md:text-xs text-slate-550 font-bold mt-0.5 flex items-center gap-1.5">
+                    <i class="fa-regular fa-calendar-days text-pink-400"></i>
+                    <span id="live-time-display">載入時空中...</span>
+                    <span class="text-slate-300">|</span>
+                    <i class="fa-solid fa-cloud-sun text-amber-400"></i>
+                    <span id="live-weather-display">🌤️ 新竹市 氣象感測中</span>
+                </p>
+            </div>
+        </div>
+        
+        <div id="nav-user-stats" class="hidden lg:flex items-center space-x-6 text-sm bg-amber-50 px-5 py-2 rounded-2xl border-2 border-yellow-300">
+            <span class="text-slate-700 font-bold"><i class="fa-solid fa-user-graduate text-pink-400 mr-1.5"></i> <span id="nav-student-display">學徒載入中...</span></span>
+            <span class="text-yellow-400">★</span>
+            <span class="text-slate-700 font-bold"><i class="fa-solid fa-medal text-purple-400 mr-1.5"></i> 階級: <span id="nav-student-level" class="text-purple-600 font-bold">初級學徒 (Lv.1)</span></span>
+            <span class="text-yellow-400">★</span>
+            <span class="text-slate-700 font-bold"><i class="fa-solid fa-gem text-amber-500 mr-1.5"></i> 魔力水晶: <span id="nav-points" class="font-bold text-amber-600">0</span></span>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <button id="btn-logout" class="hidden text-xs bg-red-100 hover:bg-red-200 text-red-600 px-4 py-2 rounded-xl border-2 border-red-300 transition-all font-black candy-btn">
+                <i class="fa-solid fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="min-h-[calc(100vh-80px)] flex items-center justify-center p-4 md:p-6 max-w-7xl w-full mx-auto relative z-10">
+
+        <!-- STEP 0: 登入系統 -->
+        <section id="panel-login" class="w-full max-w-lg bg-white bubble-card p-8 border-4 border-yellow-300 text-center shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-10 -left-10 w-40 h-40 bg-pink-300/20 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-amber-300/20 rounded-full blur-3xl"></div>
+
+            <div class="mb-8 relative z-10">
+                <div class="text-8xl mb-4">🎪</div>
+                <h2 class="text-3xl font-extrabold magic-title text-pink-500 mb-2 tracking-wide">學徒登記神殿</h2>
+                <p class="text-slate-500 text-sm leading-relaxed font-semibold">歡迎來到奧術學院！請輸入你的基本資料，開啟你專屬的【魔法學院】！</p>
+            </div>
+            
+            <form id="login-form" class="space-y-5 text-left relative z-10 font-bold">
+                <div>
+                    <label class="block text-xs font-black text-slate-500 mb-2">🎈 魔法班級 (例如: 三年五班)</label>
+                    <input type="text" id="student-class" required placeholder="請輸入班級" class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-slate-800 focus:border-pink-400 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-black text-slate-500 mb-2">⭐ 法力座號 (例如: 12)</label>
+                    <input type="number" id="student-no" required min="1" max="99" placeholder="請輸入座號" class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-slate-800 focus:border-pink-400 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-black text-slate-500 mb-2">🧙‍♂️ 學徒真名</label>
+                    <input type="text" id="student-name" required placeholder="請輸入姓名" class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-slate-800 focus:border-pink-400 outline-none transition-all">
+                </div>
+                
+                <button type="submit" id="btn-start-portal" class="w-full bg-pink-500 hover:bg-pink-400 text-white font-black py-4 rounded-2xl shadow-lg transition-all text-xl flex items-center justify-center space-x-2 candy-btn border-pink-700">
+                    <span>進入奧術門戶</span> <i class="fa-solid fa-sparkles animate-spin"></i>
+                </button>
+            </form>
+            <div id="login-loading" class="hidden text-center mt-4 text-pink-500 font-bold animate-pulse text-xs">
+                <i class="fa-solid fa-spinner animate-spin mr-2"></i>正在同步阿卡西紀錄...
+            </div>
+        </section>
+
+        <!-- STEP 1: 學徒成長平台 (主頁) -->
+        <section id="panel-dashboard" class="hidden w-full space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                <!-- 左欄：每日修行與寵物 -->
+                <div class="lg:col-span-5 flex flex-col justify-between space-y-6">
+                    <div class="bubble-card p-5 relative overflow-hidden flex flex-col justify-between h-[230px]">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs bg-pink-100 text-pink-700 border border-pink-300 px-3 py-1 rounded-full font-bold">🔮 奧術任務修行進度</span>
+                            <button id="btn-daily-sign" class="text-xs bg-amber-400 hover:bg-amber-300 text-slate-900 border-b-2 border-amber-600 px-3 py-1 rounded-full font-black animate-pulse">📆 每日簽到 (+10點)</button>
+                        </div>
+                        <!-- 任務進度清單 -->
+                        <div class="overflow-y-auto pr-1 flex-grow space-y-2 mb-2 max-h-[110px]">
+                            <div class="bg-purple-50/70 p-3 rounded-2xl border border-purple-200 text-[11px] font-semibold space-y-1">
+                                <div class="flex justify-between items-center text-purple-700 font-black">
+                                    <span>「每日修行特定練習」</span>
+                                    <span id="daily-bonus-status" class="text-amber-500">修煉中</span>
+                                </div>
+                                <p class="text-slate-400 text-[9px]">解鎖自主修煉後，完成 3 題即可領取獎勵！</p>
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden border border-slate-300">
+                                        <div id="daily-progress-fill" class="bg-purple-500 h-full w-0 transition-all duration-300"></div>
+                                    </div>
+                                    <span id="daily-progress-text" class="text-[9px] text-purple-700 font-bold shrink-0">0 / 3</span>
+                                </div>
+                                <button id="btn-claim-daily-bonus" class="hidden w-full mt-1 bg-amber-400 hover:bg-amber-300 text-slate-900 font-black py-1 rounded-lg text-[9px] border-b-2 border-amber-600">領取修行獎勵 (+10 魔力) 🎁</button>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-[11px] font-bold space-y-1.5">
+                                <div class="flex justify-between items-center text-slate-500 font-black">
+                                    <span>修行大門解鎖進度：</span>
+                                    <span id="unlock-progress-text" class="text-pink-500">未解鎖</span>
+                                </div>
+                                <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden border border-slate-300">
+                                    <div id="unlock-progress-bar" class="bg-gradient-to-r from-pink-400 to-purple-500 h-full w-0 transition-all duration-500"></div>
+                                </div>
+                                <div class="grid grid-cols-1 gap-1 text-[9px] text-slate-400" id="cond-exercises-container">
+                                    <span id="cond-exercises"><i class="fa-regular fa-circle mr-1"></i> 優先完成：『奧術試煉大門小測驗』</span>
+                                    <span id="cond-diary"><i class="fa-regular fa-circle mr-1"></i> 撰寫並提交今日情緒共鳴日記</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 魔法寵物屋 (吉卜力美術精準穿戴版) -->
+                    <div class="bubble-card p-5 flex flex-col justify-between flex-grow h-[340px] relative overflow-hidden">
+                        <!-- 寵物屋鎖定光幕 -->
+                        <div id="pet-locked-overlay" class="absolute inset-0 bg-white/95 rounded-[1.7rem] flex flex-col items-center justify-center z-30 p-4 text-center text-xs">
+                            <i class="fa-solid fa-paw text-slate-300 text-4xl mb-3 animate-pulse"></i>
+                            <h5 class="text-sm font-black text-slate-700 mb-1">🐾 寵物屋封印中</h5>
+                            <p class="text-slate-400 text-[10px] px-4 leading-relaxed font-semibold">請先完成下方的【奧術試煉傳送大門】小測驗解鎖唷！</p>
+                        </div>
+                        <div class="absolute top-0 right-0 p-4 opacity-5 text-6xl"><i class="fa-solid fa-paw"></i></div>
+                        
+                        <div class="flex items-center justify-between border-b-2 border-dashed border-slate-100 pb-2 mb-2">
+                            <h4 class="font-black text-xs text-pink-500 flex items-center">🐾 魔法寵物屋</h4>
+                            <span id="pet-happiness-badge" class="text-[9px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">😊 開心度: 100%</span>
+                        </div>
+
+                        <!-- 領養介面 -->
+                        <div id="pet-adopt-view" class="flex-grow flex flex-col items-center justify-center space-y-3 py-4">
+                            <div class="text-5xl animate-bounce">🥚</div>
+                            <h5 class="text-xs font-black text-slate-700">尚未領養小寵物</h5>
+                            <p class="text-[10px] text-center px-4 leading-relaxed font-semibold">花費 <span class="text-amber-500 font-bold">20點魔力</span> 領養專屬小夥伴吧！</p>
+                            <div class="flex space-x-2 w-full px-2">
+                                <button id="btn-adopt-dog" class="flex-1 bg-amber-400 hover:bg-amber-300 text-slate-900 font-black py-2 rounded-xl text-[10px] border-b-4 border-amber-600">🐶 魔法小柴</button>
+                                <button id="btn-adopt-cat" class="flex-1 bg-pink-400 hover:bg-pink-300 text-white font-black py-2 rounded-xl text-[10px] border-b-4 border-pink-600">🐱 奧術小橘</button>
+                            </div>
+                        </div>
+
+                        <!-- 主寵物顯示與精確裝飾穿戴 (吉卜力風格精製向量 SVG) -->
+                        <div id="pet-main-view" class="hidden flex-grow flex flex-col justify-between space-y-2">
+                            <div class="relative w-full h-36 bg-gradient-to-b from-sky-100 to-amber-50 rounded-2xl border-2 border-yellow-200 overflow-hidden flex items-center justify-center shadow-inner">
+                                <div id="pet-effect-emoji" class="absolute text-2xl opacity-0 transform -translate-y-4 transition-all duration-500 pointer-events-none z-30">❤️</div>
+                                
+                                <!-- 吉卜力高質感精緻 SVG 紙娃娃容器 -->
+                                <div class="w-32 h-32 relative pet-active">
+                                    <svg id="ghibli-pet-svg" class="w-full h-full" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                                        <!-- 動態腳本渲染角色與裝備 -->
+                                    </svg>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-1.5">
+                                <div class="flex gap-1.5">
+                                    <button id="btn-pet-feed" class="flex-1 bg-emerald-400 text-white font-black py-1.5 rounded-lg text-[10px] border-b-2 border-emerald-600">🍗 餵食 (-5)</button>
+                                    <button id="btn-pet-play" class="flex-1 bg-sky-400 text-white font-black py-1.5 rounded-lg text-[10px] border-b-2 border-sky-600">🥎 玩耍</button>
+                                </div>
+                                <div class="grid grid-cols-5 gap-1 pt-1 border-t border-slate-100">
+                                    <button data-item="hat" data-cost="20" class="wardrobe-item bg-slate-50 border-2 border-slate-200 rounded-lg p-0.5 flex flex-col items-center relative text-xs"><span>🧙‍♂️</span><span class="text-[7px] text-slate-400">20點</span><div class="lock-indicator absolute inset-0 bg-slate-900/60 rounded-lg flex items-center justify-center text-[8px] text-white"><i class="fa-solid fa-lock"></i></div></button>
+                                    <button data-item="glasses" data-cost="15" class="wardrobe-item bg-slate-50 border-2 border-slate-200 rounded-lg p-0.5 flex flex-col items-center relative text-xs"><span>👓</span><span class="text-[7px] text-slate-400">15點</span><div class="lock-indicator absolute inset-0 bg-slate-900/60 rounded-lg flex items-center justify-center text-[8px] text-white"><i class="fa-solid fa-lock"></i></div></button>
+                                    <button data-item="crown" data-cost="30" class="wardrobe-item bg-slate-50 border-2 border-slate-200 rounded-lg p-0.5 flex flex-col items-center relative text-xs"><span>👑</span><span class="text-[7px] text-slate-400">30點</span><div class="lock-indicator absolute inset-0 bg-slate-900/60 rounded-lg flex items-center justify-center text-[8px] text-white"><i class="fa-solid fa-lock"></i></div></button>
+                                    <button data-item="scarf" data-cost="10" class="wardrobe-item bg-slate-50 border-2 border-slate-200 rounded-lg p-0.5 flex flex-col items-center relative text-xs"><span>🧣</span><span class="text-[7px] text-slate-400">10點</span><div class="lock-indicator absolute inset-0 bg-slate-900/60 rounded-lg flex items-center justify-center text-[8px] text-white"><i class="fa-solid fa-lock"></i></div></button>
+                                    <button data-item="wings" data-cost="40" class="wardrobe-item bg-slate-50 border-2 border-slate-200 rounded-lg p-0.5 flex flex-col items-center relative text-xs"><span>👼</span><span class="text-[7px] text-slate-400">40點</span><div class="lock-indicator absolute inset-0 bg-slate-900/60 rounded-lg flex items-center justify-center text-[8px] text-white"><i class="fa-solid fa-lock"></i></div></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右欄：伴讀精靈露娜大空間 -->
+                <div class="lg:col-span-7 flex flex-col">
+                    <div class="bubble-card p-6 flex-grow flex flex-col justify-between h-full min-h-[560px]" id="resonance-diary-card">
+                        <div class="flex flex-col h-full justify-between space-y-4">
+                            <div>
+                                <h4 class="text-base font-black text-pink-500 flex items-center justify-between border-b-2 border-slate-100 pb-3">
+                                    <span class="flex items-center text-lg"><i class="fa-solid fa-star-twinkle mr-2 text-pink-400 animate-spin"></i> 伴讀精靈「露娜」✨</span>
+                                    <span id="luna-step-badge" class="text-xs bg-pink-100 text-pink-700 px-3 py-1 rounded-full font-bold">1 / 4 階段</span>
+                                </h4>
+                            </div>
+                            <div class="bg-pink-50/50 p-6 rounded-3xl border-2 border-pink-100/60 flex-grow flex flex-col justify-center min-h-[300px] shadow-inner">
+                                <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+                                    <div class="text-7xl animate-bounce shrink-0 select-none">🧚‍♀️</div>
+                                    <div class="text-sm font-semibold text-slate-700 leading-relaxed space-y-4 w-full text-center md:text-left">
+                                        <p id="luna-bubble-text" class="text-base font-extrabold text-slate-800 leading-relaxed">學徒你好！我是奧術伴讀精靈「露娜」🧚‍♀️ 今天過得好嗎？請先點選今天的心情水晶，我們就開始共鳴日記唷！</p>
+                                        <div id="luna-mood-selector" class="grid grid-cols-5 gap-3 pt-4 font-bold font-sans">
+                                            <button type="button" data-mood="興奮" class="luna-mood-btn bg-white border-2 border-slate-200 hover:border-pink-400 p-3 rounded-2xl flex flex-col items-center shadow-sm"><span class="text-3xl">😆</span><span class="text-xs text-slate-400 mt-1">興奮</span></button>
+                                            <button type="button" data-mood="專注" class="luna-mood-btn bg-white border-2 border-slate-200 hover:border-pink-400 p-3 rounded-2xl flex flex-col items-center shadow-sm"><span class="text-3xl">🧐</span><span class="text-xs text-slate-400 mt-1">專注</span></button>
+                                            <button type="button" data-mood="困惑" class="luna-mood-btn bg-white border-2 border-slate-200 hover:border-pink-400 p-3 rounded-2xl flex flex-col items-center shadow-sm"><span class="text-3xl">🤔</span><span class="text-xs text-slate-400 mt-1">困惑</span></button>
+                                            <button type="button" data-mood="疲憊" class="luna-mood-btn bg-white border-2 border-slate-200 hover:border-pink-400 p-3 rounded-2xl flex flex-col items-center shadow-sm"><span class="text-3xl">😴</span><span class="text-xs text-slate-300 mt-1">疲憊</span></button>
+                                            <button type="button" data-mood="快樂" class="luna-mood-btn bg-white border-2 border-slate-200 hover:border-pink-400 p-3 rounded-2xl flex flex-col items-center shadow-sm"><span class="text-3xl">🥰</span><span class="text-xs text-pink-400 mt-1">快樂</span></button>
+                                        </div>
+                                        <div id="luna-input-container" class="hidden pt-2">
+                                            <textarea id="luna-text-input" rows="4" placeholder="對露娜說說看今天的心得與挑戰..." class="w-full bg-white border-2 border-slate-200 rounded-2xl p-4 text-sm text-slate-800 outline-none focus:border-pink-400 resize-none font-bold shadow-inner"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex gap-4">
+                                <button type="button" id="btn-luna-prev" class="hidden flex-1 bg-slate-100 text-slate-600 font-black py-3 rounded-2xl border-b-4 border-slate-300 text-sm">上一步</button>
+                                <button type="button" id="btn-luna-next" class="flex-1 bg-pink-500 text-white font-black py-3 rounded-2xl border-b-4 border-pink-700 text-sm">下一步 ➡️</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中排 1：賢者阿基米德 AI 導師 (拍照引導) -->
+            <div class="w-full">
+                <div class="bubble-card p-6 w-full">
+                    <div class="flex items-center justify-between border-b-2 border-slate-100 pb-3 mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-3xl">🦉</span>
+                            <div>
+                                <h4 class="font-black text-base text-pink-500 animate-pulse">引導式學習：賢者阿基米德 (Socratic AI)</h4>
+                                <p class="text-[11px] text-teal-505 font-bold flex items-center">
+                                    <span class="w-2 h-2 bg-teal-500 rounded-full inline-block mr-1.5 animate-ping"></span> 支援拍照/上傳解析
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col lg:flex-row gap-6 items-stretch">
+                        <div class="lg:w-2/3 bg-slate-50 border-2 border-slate-200/60 rounded-3xl p-4 h-[300px] overflow-y-auto space-y-4" id="ai-platform-chat-box"></div>
+                        <div class="lg:w-1/3 flex flex-col justify-between bg-amber-50/30 border-2 border-dashed border-amber-200 rounded-3xl p-4">
+                            <div>
+                                <h5 class="text-xs font-black text-slate-500 uppercase tracking-wider mb-2"><i class="fa-solid fa-camera mr-1 text-purple-500 animate-bounce"></i> 拍照提問修行</h5>
+                                <p class="text-slate-505 text-[11px] mb-3 font-bold">點擊魔法相機拍照或上傳不會的題目，阿基米德會用語氣溫和的提問，帶領你想出答案！</p>
+                                <div id="image-preview-container" class="hidden relative p-2 bg-white border border-slate-200 rounded-2xl flex items-center gap-3 mb-3">
+                                    <img id="image-preview-el" src="" class="h-12 w-12 object-cover rounded-xl border border-slate-300">
+                                    <div class="text-[10px] text-slate-600 flex-grow font-bold truncate">已附上照片</div>
+                                    <button type="button" id="btn-remove-preview" class="text-red-500 hover:text-red-700 p-1.5"><i class="fa-solid fa-circle-xmark text-lg"></i></button>
+                                </div>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="flex gap-2">
+                                    <input type="file" id="ai-image-file-input" accept="image/*" class="hidden">
+                                    <button type="button" id="btn-camera-upload" class="bg-purple-100 text-purple-600 h-10 w-12 rounded-xl flex items-center justify-center border-b-2 border-purple-300"><i class="fa-solid fa-camera text-lg"></i></button>
+                                    <input type="text" id="ai-platform-input" placeholder="數學問題 or 附照片..." class="flex-grow bg-white border-2 border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-800 font-bold focus:outline-none h-10 focus:border-pink-400">
+                                </div>
+                                <button id="btn-send-platform-msg" class="w-full bg-amber-400 text-slate-900 py-2.5 rounded-xl text-xs font-black border-b-4 border-amber-600 candy-btn">✨ 傳送魔法提問 🕊️</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中排 2：奧術試煉大門 (優先完成測驗) -->
+            <div class="w-full">
+                <div id="trial-gate-container" class="bubble-card p-8 border-4 border-dashed border-pink-500 text-center transition-all duration-500 relative overflow-hidden flex flex-col items-center justify-center min-h-[220px]">
+                    <div class="relative z-10 space-y-4 max-w-2xl">
+                        <span class="text-5xl animate-bounce inline-block select-none">⛩️</span>
+                        <h3 class="text-3xl font-black text-pink-500 tracking-wide magic-title">第一部分：奧術試煉傳送大門</h3>
+                        <p class="text-slate-505 text-sm font-semibold leading-relaxed">
+                            請小魔法師優先跨入此傳送大門！完成「消失鐘樓」的七大數學小測驗，方能解鎖底部的「自主單元提升練習」與「寵物屋」唷！
+                        </p>
+                        <button id="btn-enter-game" class="bg-gradient-to-r from-pink-500 to-amber-400 text-white font-black px-12 py-4 rounded-3xl text-lg shadow-xl transition-all flex items-center space-x-2 mx-auto candy-btn border-pink-700">
+                            <span>開啟小測驗試煉</span> <i class="fa-solid fa-circle-play"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 下排：自我單元提升練習 (測驗完成後解除封印) -->
+            <div class="w-full relative">
+                <div class="bubble-card p-6 w-full relative animate-fade-in">
+                    <div id="practice-locked-overlay" class="absolute inset-0 bg-white/95 rounded-[1.7rem] flex flex-col items-center justify-center z-30 p-4 text-center select-none">
+                        <i class="fa-solid fa-lock text-pink-500 text-5xl mb-3 animate-pulse"></i>
+                        <h4 class="text-lg font-black text-slate-800 mb-1 magic-title">自主單元提升練習 (未解鎖)</h4>
+                        <p class="text-slate-500 text-sm font-semibold px-4 max-w-lg">請先完成上方的【奧術試煉大門小測驗】即可為你開啟進階磨練場！</p>
+                    </div>
+
+                    <h4 class="text-sm font-black text-pink-500 mb-4 flex items-center border-b pb-2">
+                        <i class="fa-solid fa-graduation-cap mr-2 text-amber-400 text-lg"></i> 自我單元提升練習與草稿版
+                    </h4>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch mb-6">
+                        <!-- 選擇區與題目區 -->
+                        <div class="flex flex-col justify-between space-y-4">
+                            <div class="grid grid-cols-2 gap-4 font-bold">
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 font-black mb-1 uppercase">🎈 領域單元</label>
+                                    <select id="select-unit" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none font-bold">
+                                        <option value="fraction">🧪 分數藥水比例</option>
+                                        <option value="estimate">🔮 乘法估算魔法陣</option>
+                                        <option value="clock">⏱️ 時鐘經過計算法</option>
+                                        <option value="addition">⚡ 萬以內多重進退位</option>
+                                        <option value="angle">📐 角與魔鏡結界</option>
+                                        <option value="length">📏 跨單位長度對齊</option>
+                                        <option value="geometry">🧱 幾何面積保留</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 font-black mb-1 uppercase">⭐ 難度</label>
+                                    <select id="select-difficulty" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none font-bold">
+                                        <option value="easy">✦ 初階磨練</option>
+                                        <option value="hard">✦ 進階挑戰</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="bg-amber-50/50 rounded-2xl p-4 border-2 border-dashed border-amber-300 text-center min-h-[120px] flex flex-col justify-center relative flex-grow">
+                                <div class="absolute top-1 left-2 text-[10px] text-amber-500/50 font-black">奧術題目挑戰</div>
+                                <div id="exercise-question-area" class="text-slate-800 text-xs md:text-sm font-extrabold leading-relaxed mb-3">
+                                    點擊下面的召喚按鈕開始修行挑戰！
+                                </div>
+                                <div id="exercise-action-area" class="space-y-2 hidden font-bold font-sans"></div>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row gap-2 font-bold text-xs pt-2">
+                                <button id="btn-summon-exercise" class="flex-1 bg-slate-50 border-2 border-slate-300 text-slate-700 py-3 rounded-2xl text-xs font-black candy-btn"><i class="fa-solid fa-wand"></i> 召喚隨機新挑戰</button>
+                                <button id="btn-summon-ai-exercise" class="flex-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white py-3 rounded-2xl text-xs font-black candy-btn border-indigo-700">✨ 召喚 AI 奧術客製題</button>
+                                <button id="btn-verify-exercise" class="w-full sm:w-28 bg-amber-400 text-slate-900 py-3 rounded-2xl text-xs font-black hidden candy-btn border-amber-500">校對答案</button>
+                            </div>
+                        </div>
+
+                        <!-- 練習手寫板 -->
+                        <div class="flex flex-col justify-between bg-slate-50 border-2 border-slate-200 rounded-3xl p-4 min-h-[220px]" id="practice-scratchpad-panel">
+                            <div class="flex justify-between items-center text-[11px] font-black text-slate-500 mb-2">
+                                <span><i class="fa-solid fa-pen-nib mr-1 text-pink-500 animate-pulse"></i> 解題草稿板</span>
+                                <div class="flex space-x-2">
+                                    <button id="btn-practice-pencil" class="bg-purple-500 text-white px-2.5 py-1 rounded-lg text-[10px] shadow-sm font-bold animate-pulse">畫筆</button>
+                                    <button id="btn-practice-eraser" class="bg-slate-200 text-slate-600 px-2.5 py-1 rounded-lg text-[10px] shadow-sm font-bold">擦布</button>
+                                    <button id="btn-practice-clear" class="bg-red-100 text-red-500 px-2.5 py-1 rounded-lg text-[10px] shadow-sm font-bold">清除</button>
+                                </div>
+                            </div>
+                            <div class="relative w-full flex-grow bg-white border-2 border-slate-200 rounded-2xl overflow-hidden h-[180px]">
+                                <canvas id="practice-scratchpad" class="w-full h-full block"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 掌握度雷達圖與即時診斷 -->
+                    <div class="border-t-2 border-dashed border-slate-100 pt-5">
+                        <h5 class="text-sm font-black text-purple-600 mb-4"><i class="fa-solid fa-chart-column mr-1.5 animate-bounce"></i> 奧術掌握度實時雷達圖</h5>
+                        <div class="flex flex-col lg:flex-row gap-6">
+                            <div class="flex-grow lg:w-3/5 space-y-3 bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-inner">
+                                <div class="space-y-2 text-xs font-bold text-slate-600">
+                                    <div class="flex items-center justify-between"><span class="w-32">🧪 分數藥水</span><div class="flex-grow mx-3 bg-slate-200 h-3 rounded-full overflow-hidden border border-slate-300"><div id="mastery-fill-fraction" class="bg-amber-400 h-full w-1/2 transition-all"></div></div><span id="mastery-val-fraction" class="w-10 text-right">50%</span></div>
+                                    <div class="flex items-center justify-between"><span class="w-32">🔮 乘法估算</span><div class="flex-grow mx-3 bg-slate-200 h-3 rounded-full overflow-hidden border border-slate-300"><div id="mastery-fill-estimate" class="bg-amber-400 h-full w-1/2 transition-all"></div></div><span id="mastery-val-estimate" class="w-10 text-right">50%</span></div>
+                                    <div class="flex items-center justify-between"><span class="w-32">⏱️ 時鐘經過</span><div class="flex-grow mx-3 bg-slate-200 h-3 rounded-full overflow-hidden border border-slate-300"><div id="mastery-fill-clock" class="bg-amber-400 h-full w-1/2 transition-all"></div></div><span id="mastery-val-clock" class="w-10 text-right">50%</span></div>
+                                    <div class="flex items-center justify-between"><span class="w-32">⚡ 萬內加減</span><div class="flex-grow mx-3 bg-slate-200 h-3 rounded-full overflow-hidden border border-slate-300"><div id="mastery-fill-addition" class="bg-amber-400 h-full w-1/2 transition-all"></div></div><span id="mastery-val-addition" class="w-10 text-right">50%</span></div>
+                                    <div class="flex items-center justify-between"><span class="w-32">📐 角之結界</span><div class="flex-grow mx-3 bg-slate-200 h-3 rounded-full overflow-hidden border border-slate-300"><div id="mastery-fill-angle" class="bg-amber-400 h-full w-1/2 transition-all"></div></div><span id="mastery-val-angle" class="w-10 text-right">50%</span></div>
+                                    <div class="flex items-center justify-between"><span class="w-32">📏 長度換算</span><div class="flex-grow mx-3 bg-slate-200 h-3 rounded-full overflow-hidden border border-slate-300"><div id="mastery-fill-length" class="bg-amber-400 h-full w-1/2 transition-all"></div></div><span id="mastery-val-length" class="w-10 text-right">50%</span></div>
+                                    <div class="flex items-center justify-between"><span class="w-32">🧱 幾何面積</span><div class="flex-grow mx-3 bg-slate-200 h-3 rounded-full overflow-hidden border border-slate-300"><div id="mastery-fill-geometry" class="bg-amber-400 h-full w-1/2 transition-all"></div></div><span id="mastery-val-geometry" class="w-10 text-right">50%</span></div>
+                                </div>
+                            </div>
+                            <div class="lg:w-2/5 flex flex-col justify-between bg-purple-50/50 border-2 border-purple-200 rounded-2xl p-5">
+                                <div class="flex-grow">
+                                    <h6 class="text-xs font-black text-purple-700 mb-3"><i class="fa-solid fa-feather-pointed mr-1.5 animate-bounce"></i> 賢者導師即時修行卷軸</h6>
+                                    <div id="realtime-advice-text" class="text-slate-600 text-xs font-semibold leading-relaxed p-3 bg-white border border-purple-100 rounded-xl min-h-[140px] max-h-[180px] overflow-y-auto">
+                                        點擊按鈕，賢者將即時讀取你的掌握度，為你提供溫慢、充滿信心的修行方向！
+                                    </div>
+                                </div>
+                                <button type="button" id="btn-realtime-diagnose" class="w-full mt-4 bg-purple-500 text-white font-black py-2.5 rounded-xl text-xs border-b-4 border-purple-700 flex items-center justify-center gap-1.5 candy-btn font-sans">
+                                    <i class="fa-solid fa-sparkles animate-spin-slow"></i><span>🦉 啟動即時弱點分析</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- STEP 2: 遊戲測試傳送門內部關卡 (消失鐘樓 - L1 to L7) -->
+        <section id="panel-game-container" class="hidden w-full space-y-6">
+            <div class="flex justify-between items-center bg-white/95 border-b-4 border-yellow-300 py-3.5 px-6 rounded-2xl shadow-md font-bold">
+                <button id="btn-back-to-platform" class="bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold border-2 border-slate-300 candy-btn"><i class="fa-solid fa-arrow-left mr-1"></i> 返回學徒控制台</button>
+                <div class="text-sm font-black text-pink-500 magic-title font-sans">試煉中 ✦ 魔法學院的消失鐘樓 v3.6</div>
+            </div>
+
+            <!-- 第一關：真分數藥水調配 -->
+            <div id="step-level1" class="w-full max-w-3xl bubble-card p-6 md:p-8 mx-auto hidden">
+                <div class="flex flex-col md:flex-row gap-8 items-center">
+                    <div class="flex-1 space-y-6">
+                        <div class="flex justify-between items-center">
+                            <div class="inline-block bg-pink-100 text-pink-800 text-xs font-bold px-3 py-1 rounded-full">第一關：分數的魔法藥水</div>
+                            <div class="text-xs font-bold text-pink-700 bg-pink-50 px-3 py-1 rounded-md">通關進度: <span id="l1-progress" class="text-base text-pink-900 font-black">1/3</span></div>
+                        </div>
+                        <h2 class="text-2xl font-extrabold text-slate-800 magic-title animate-pulse">肚子餓的壁畫精靈</h2>
+                        <p class="text-slate-600 text-sm leading-relaxed">請幫我調配出剛剛好 <strong id="l1-question-text" class="text-pink-500 text-xl font-black">四分之三瓶</strong> 的七彩藥水！</p>
+                        <div class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200">
+                            💡 <strong>操作提示：</strong> 直接點擊藥水瓶的格子，藥水會自動向上填充。調配好後點擊送出。
+                        </div>
+                        <div class="text-xs font-bold text-pink-500"><i class="fa-solid fa-stopwatch"></i> 本關時間：<span id="timer-l1" class="font-mono">0</span> 秒</div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div id="potion-bottle-container" class="relative w-36 h-64 border-4 border-slate-300 rounded-b-3xl rounded-t-lg bg-slate-50 overflow-hidden flex flex-col-reverse animate-pulse"></div>
+                        <div class="mt-4 text-center"><span class="text-xs font-bold bg-slate-50 text-slate-500 py-1.5 px-4 rounded-full">目前：<span id="potion-fraction" class="text-pink-500 font-extrabold text-base">0 / 4 瓶</span></span></div>
+                        <button id="btn-verify-level1" class="mt-6 w-full bg-pink-500 text-white font-extrabold py-3 rounded-xl border-b-4 border-pink-700 candy-btn">請精靈喝藥水 🧪</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第二關：九九乘法法陣 -->
+            <div id="step-level2" class="w-full max-w-3xl bubble-card p-6 md:p-8 mx-auto hidden">
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div class="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full">第二關：神祕的魔法陣</div>
+                        <div class="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-md">通關進度: <span id="l2-progress" class="text-base text-amber-900 font-black">1/3</span></div>
+                    </div>
+                    <h2 class="text-2xl font-extrabold text-slate-800 magic-title">九九乘法傳送法陣 (大約值估算)</h2>
+                    <p class="text-slate-600 text-sm">請找出正確的咒語數字點選放入括號中，才能啟動傳送法陣。</p>
+                    <div class="py-6 bg-slate-50 rounded-2xl border flex flex-col items-center space-y-4">
+                        <div id="latex-formula-container" class="text-xl md:text-2xl min-h-[50px] px-4 font-bold text-slate-700 bg-slate-50 px-3 py-1 rounded-md"></div>
+                        <div class="text-lg font-bold text-slate-700">答案是：<span class="text-purple-500 font-mono bg-slate-50 px-6 py-2 rounded-xl border-2 border-dashed border-purple-400 animate-bounce" id="drop-target">?</span></div>
+                    </div>
+                    <div id="num-stones-container" class="flex flex-wrap justify-center gap-2 pt-2 font-bold">
+                        <div class="num-stone w-10 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-lg cursor-pointer hover:border-amber-400 shadow-sm" data-value="0">0</div>
+                        <div class="num-stone w-10 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-lg cursor-pointer hover:border-amber-400 shadow-sm" data-value="1">1</div>
+                        <div class="num-stone w-10 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-lg cursor-pointer hover:border-amber-400 shadow-sm" data-value="2">2</div>
+                        <div class="num-stone w-10 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-lg cursor-pointer hover:border-amber-400 shadow-sm" data-value="3">3</div>
+                        <div class="num-stone w-10 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-lg cursor-pointer hover:border-amber-400 shadow-sm" data-value="4">4</div>
+                        <div class="num-stone w-10 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-lg cursor-pointer hover:border-amber-400 shadow-sm" data-value="5">5</div>
+                        <div class="num-stone w-10 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-lg cursor-pointer hover:border-amber-400 shadow-sm" data-value="6">6</div>
+                        <div class="num-stone w-10 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-lg cursor-pointer hover:border-amber-400 shadow-sm" data-value="7">7</div>
+                        <div class="num-stone w-10 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-lg cursor-pointer hover:border-amber-400 shadow-sm" data-value="8">8</div>
+                        <div class="num-stone w-10 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-lg cursor-pointer hover:border-amber-400 shadow-sm" data-value="9">9</div>
+                        <div class="num-stone px-2.5 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-xs cursor-pointer hover:border-amber-400 shadow-sm" data-value="1200">1200</div>
+                        <div class="num-stone px-2.5 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-xs cursor-pointer hover:border-amber-400 shadow-sm" data-value="1400">1400</div>
+                        <div class="num-stone px-2.5 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-xs cursor-pointer hover:border-amber-400 shadow-sm" data-value="1500">1500</div>
+                        <div class="num-stone px-2.5 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-xs cursor-pointer hover:border-amber-400 shadow-sm" data-value="1600">1600</div>
+                        <div class="num-stone px-2.5 h-10 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-center text-xs cursor-pointer hover:border-amber-400 shadow-sm" data-value="3500">3500</div>
+                    </div>
+                    <div class="pt-4 flex justify-between items-center">
+                        <div class="text-xs font-bold text-amber-500"><i class="fa-solid fa-stopwatch"></i> 本關時間：<span id="timer-l2" class="font-mono">0</span> 秒</div>
+                        <button id="btn-verify-level2" class="bg-amber-400 text-slate-900 font-black py-2.5 px-6 rounded-xl text-sm border-b-4 border-amber-500 candy-btn">啟動魔法陣 ✨</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第三關：時鐘怪獸經過時間 -->
+            <div id="step-level3" class="w-full max-w-3xl bubble-card p-6 md:p-8 mx-auto hidden">
+                <div class="flex flex-col md:flex-row gap-8 items-center">
+                    <div class="space-y-6 flex-1">
+                        <div class="inline-block bg-red-100 text-red-800 text-xs font-bold px-3 py-1 rounded-full">第三關：時鐘怪獸挑戰</div>
+                        <h2 class="text-2xl font-extrabold text-red-500 magic-title">時鐘怪獸的咆哮！</h2>
+                        <p id="l3-question-text-random-quiz" class="text-slate-600 text-sm leading-relaxed"></p>
+                        <div class="flex items-center space-x-2 text-xs font-bold">
+                            <input type="number" id="ans-hour" min="1" max="12" placeholder="點" class="w-14 bg-slate-50 border-2 rounded-lg py-1.5 text-center text-red-500 font-bold">點
+                            <input type="number" id="ans-minute" min="0" max="59" placeholder="分" class="w-14 bg-slate-50 border-2 rounded-lg py-1.5 text-center text-red-500 font-bold">分
+                        </div>
+                        <div class="text-xs font-bold text-red-500"><i class="fa-solid fa-stopwatch"></i> 時間：<span id="timer-l3" class="font-mono">0</span> 秒</div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <!-- 互動時鐘本體 -->
+                        <div class="w-48 h-48 clock-face relative" id="clock-component" style="touch-action: none;">
+                            <div class="absolute w-3 h-3 bg-slate-800 rounded-full top-1/2 left-1/2 -mt-1.5 -ml-1.5 z-30"></div>
+                            <div class="absolute w-full text-center top-1 font-bold text-slate-700 text-sm pointer-events-none">12</div>
+                            <div class="absolute w-full text-center bottom-1 font-bold text-slate-700 text-sm pointer-events-none">6</div>
+                            <div class="absolute h-full flex items-center right-2 font-bold text-slate-700 text-sm pointer-events-none">3</div>
+                            <div class="absolute h-full flex items-center left-2 font-bold text-slate-700 text-sm pointer-events-none">9</div>
+                            <div id="hour-hand" class="clock-hand hour-hand z-10" style="transform: rotate(0deg); pointer-events: none;"></div>
+                            <div id="minute-hand" class="clock-hand minute-hand z-20" style="transform: rotate(0deg); cursor: grab;"></div>
+                        </div>
+                        <div class="mt-4 text-center"><span class="text-xs font-bold bg-slate-50 py-1 px-3 rounded-full">時鐘：<span id="clock-display" class="text-red-500 font-extrabold">0 點 0 分</span></span></div>
+                        <button id="btn-verify-level3" class="mt-6 w-full bg-red-500 text-white font-extrabold py-3 rounded-xl border-b-4 border-red-700 candy-btn">轉動發條解鎖 🔓</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第四關：進退位加減法 -->
+            <div id="step-level4" class="w-full max-w-5xl bubble-card p-6 md:p-8 mx-auto hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-5 space-y-5 flex flex-col justify-between">
+                        <div>
+                            <div class="inline-block bg-teal-100 text-teal-800 text-xs font-bold px-3 py-1 rounded-full mb-3">第四關：萬以內加減</div>
+                            <h2 class="text-2xl font-extrabold text-slate-800 magic-title">時間封印的密碼</h2>
+                            <div class="my-4 p-4 bg-slate-50 rounded-2xl border text-center"><span id="l4-question" class="text-base font-black text-slate-700 leading-relaxed block"></span></div>
+                            <input type="number" id="l4-answer-input" placeholder="請輸入答案" class="w-full bg-slate-50 border-2 rounded-xl px-4 py-2.5 text-center font-bold text-teal-600">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="text-xs font-bold text-teal-500"><i class="fa-solid fa-stopwatch"></i> <span id="timer-l4" class="font-mono">0</span> 秒</div>
+                            <button id="btn-verify-level4" class="bg-teal-500 text-white font-extrabold py-2 px-6 rounded-xl border-b-4 border-teal-700 candy-btn">輸入解鎖 🔮</button>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-7 bg-slate-50 rounded-2xl border p-4 flex flex-col justify-between">
+                        <div class="flex justify-between items-center mb-3 text-xs font-bold text-slate-400">
+                            <span><i class="fa-solid fa-pen-ruler"></i> 魔法草稿手寫板</span>
+                            <button id="btn-clear-canvas" class="bg-red-100 text-red-600 px-2.5 py-1 rounded-md font-bold">清除</button>
+                        </div>
+                        <div class="relative w-full aspect-video bg-white border rounded-xl overflow-hidden"><canvas id="scratchpad" class="w-full h-full block"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第五關：角辨識 -->
+            <div id="step-level5" class="w-full max-w-3xl bubble-card p-6 md:p-8 mx-auto hidden">
+                <div class="flex flex-col md:flex-row gap-8 items-center">
+                    <div class="space-y-5 w-full">
+                        <div class="inline-block bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full">第五關：角之結界</div>
+                        <h2 class="text-2xl font-extrabold text-slate-800 magic-title">時空魔鏡的角</h2>
+                        <div class="bg-slate-50 p-4 rounded-xl border space-y-2.5 font-bold">
+                            <span class="text-xs font-extrabold text-slate-500">1. 請問魔鏡中的這個角是？</span>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button id="btn-l5-acute" class="l5-angle-opt bg-white border border-slate-200 py-2 rounded-xl text-xs font-bold hover:bg-slate-50">銳角</button>
+                                <button id="btn-l5-right" class="l5-angle-opt bg-white border border-slate-200 py-2 rounded-xl text-xs font-bold hover:bg-slate-50">直角</button>
+                                <button id="btn-l5-obtuse" class="l5-angle-opt bg-white border border-slate-200 py-2 rounded-xl text-xs font-bold hover:bg-slate-50">鈍角</button>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border space-y-2.5 font-bold">
+                            <span class="text-xs font-extrabold text-slate-500">2. 如果角的兩條邊「畫得更長」，這個角的大小會變嗎？</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button id="btn-l5-concept-yes" class="l5-concept-opt bg-white border border-slate-200 p-2.5 rounded-xl text-[10px] font-bold text-left">變大 📈</button>
+                                <button id="btn-l5-concept-no" class="l5-concept-opt bg-white border border-slate-200 p-2.5 rounded-xl text-[10px] font-bold text-left">不變 🙅‍♂️</button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-xs font-bold text-indigo-500"><i class="fa-solid fa-stopwatch"></i> <span id="timer-l5" class="font-mono">0</span> 秒</div>
+                            <button id="btn-verify-level5" class="bg-indigo-500 text-white font-extrabold py-2 px-6 rounded-xl border-b-4 border-indigo-700 candy-btn">破解 🔮</button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="bg-slate-50 border-2 border-indigo-300 rounded-2xl p-4 w-48 h-48 flex justify-center items-center"><svg id="magic-angle-svg" width="160" height="160" viewBox="0 0 200 200"></svg></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第六關：長度單位換算與定位板 -->
+            <div id="step-level6" class="w-full max-w-4xl bubble-card p-6 md:p-8 mx-auto hidden">
+                <div class="flex flex-col lg:flex-row gap-8 items-center">
+                    <div class="flex-grow space-y-6 w-full">
+                        <div class="inline-block bg-pink-100 text-pink-800 text-xs font-bold px-3 py-1 rounded-full">第六關：長度換算</div>
+                        <h2 class="text-2xl font-extrabold text-slate-800 magic-title">長度單位的時空密鑰</h2>
+                        <div class="bg-slate-50 p-4 rounded-xl border text-center"><span id="l6-question-text" class="text-lg font-black text-slate-700 font-sans"></span></div>
+                        <div class="space-y-4 bg-slate-50 p-4 rounded-xl border text-xs"><div class="flex items-center justify-between font-bold"><span class="text-slate-500">換算結果：</span><div id="l6-input-container" class="flex items-center space-x-2 font-bold"></div></div></div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-xs font-bold text-pink-500"><i class="fa-solid fa-stopwatch"></i> <span id="timer-l6" class="font-mono">0</span> 秒</div>
+                            <button id="btn-verify-level6" class="bg-pink-500 text-white font-extrabold py-2 px-6 rounded-xl border-b-4 border-pink-700 candy-btn">鎖定 🔮</button>
+                        </div>
+                    </div>
+                    <div class="w-full lg:w-96 flex flex-col items-center">
+                        <div class="flex gap-2 justify-center mb-3 w-full font-bold">
+                            <button id="btn-l6-pencil" class="flex-grow bg-teal-500 text-white px-3 py-1.5 rounded-xl text-[10px]">魔法筆</button>
+                            <button id="btn-l6-eraser" class="bg-slate-50 border border-slate-200 text-slate-550 px-3 py-1.5 rounded-xl text-[10px]">橡皮擦</button>
+                            <button id="btn-l6-clear" class="bg-red-100 text-red-500 px-3 py-1.5 rounded-xl text-[10px]">清除</button>
+                        </div>
+                        <div class="relative w-44 h-44 bg-slate-50 border rounded-2xl overflow-hidden shadow-inner">
+                            <div class="absolute top-0 inset-x-0 h-6 bg-slate-800 text-white flex text-center font-bold text-[9px] pointer-events-none z-10 border-b border-slate-700"><div class="w-1/3 flex items-center justify-center border-r">m</div><div class="w-1/3 flex items-center justify-center border-r">cm</div><div class="w-1/3 flex items-center justify-center">mm</div></div>
+                            <canvas id="unit-canvas" class="w-full h-full block pt-6"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第七關：幾何與保留守恆 -->
+            <div id="step-level7" class="w-full max-w-4xl bubble-card p-6 md:p-8 mx-auto hidden">
+                <div class="flex flex-col lg:flex-row gap-8 items-center">
+                    <div class="flex-grow space-y-5 w-full">
+                        <div class="inline-block bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">第七關：幾何圖形切割</div>
+                        <h2 class="text-2xl font-extrabold text-slate-800 magic-title">幾何牆秘密</h2>
+                        <p class="text-slate-600 text-sm">長方形長 <strong id="l7-width-text" class="text-emerald-500 text-lg">?</strong>、寬 <strong id="l7-height-text" class="text-emerald-500 text-lg">?</strong> 公分。</p>
+                        <div class="bg-slate-50 p-4 rounded-xl border text-xs font-bold space-y-3">
+                            <div class="flex justify-between items-center"><span class="text-slate-500">1. 斜切成兩半的三角形面積？</span><input type="number" id="l7-tri-ans" class="w-16 bg-slate-50 border-2 rounded-lg py-1 text-center font-bold text-emerald-500 focus:outline-none"></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-500">2. 不管怎麼拼湊的總面積？</span><input type="number" id="l7-rect-ans" class="w-16 bg-slate-50 border-2 rounded-lg py-1 text-center font-bold text-emerald-500 focus:outline-none"></div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-xs font-bold text-emerald-500"><i class="fa-solid fa-stopwatch"></i> <span id="timer-l7" class="font-mono">0</span> 秒</div>
+                            <button id="btn-verify-level7" class="bg-emerald-500 text-white font-extrabold py-2 px-6 rounded-xl border-b-4 border-emerald-700 candy-btn">解開 🔮</button>
+                        </div>
+                    </div>
+                    <div class="w-full lg:w-96 flex flex-col items-center">
+                        <div class="flex gap-2 justify-center mb-3 w-full font-bold">
+                            <button id="btn-l7-pencil" class="flex-grow bg-teal-500 text-white px-3 py-1.5 rounded-xl text-[10px]">畫筆</button>
+                            <button id="btn-l7-eraser" class="bg-slate-50 border text-slate-550 px-3 py-1.5 rounded-xl text-[10px]">橡皮擦</button>
+                            <button id="btn-l7-clear" class="bg-red-100 text-red-500 px-3 py-1.5 rounded-xl text-[10px]">清除</button>
+                        </div>
+                        <div class="relative w-44 h-44 bg-slate-50 border rounded-2xl overflow-hidden shadow-inner"><canvas id="geometry-canvas" class="w-full h-full block"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 通關結算 (Victory) -->
+            <div id="step-victory" class="w-full max-w-5xl bubble-card p-6 md:p-8 mx-auto hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
+                    <div class="lg:col-span-6 space-y-6 flex flex-col justify-between">
+                        <div>
+                            <div class="text-5xl mb-2 animate-bounce">🏆</div>
+                            <h2 class="text-2xl font-black text-slate-800 mb-1 magic-title">試煉完成！鐘樓發條得救！</h2>
+                            <p class="text-slate-500 text-xs">小測驗全部關卡已成功破解！以下是你的戰績報告：</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-2xl border space-y-3 text-xs">
+                            <h3 class="text-sm font-extrabold text-slate-700"><i class="fa-solid fa-square-poll-vertical mr-2"></i> 魔法學科成果分析</h3>
+                            <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-400 border-b pb-3 font-mono font-bold">
+                                <div>第一關: <span id="analysis-time-l1" class="text-pink-500 font-bold">0s</span></div>
+                                <div>第二關: <span id="analysis-time-l2" class="text-amber-500 animate-pulse">0s</span></div>
+                                <div>第三關: <span id="analysis-time-l3" class="text-red-500">0s</span></div>
+                                <div>第四關: <span id="analysis-time-l4" class="text-teal-500 font-bold">0s</span></div>
+                                <div>第五關: <span id="analysis-time-l5" class="text-indigo-500 font-bold">0s</span></div>
+                                <div>第六關: <span id="analysis-time-l6" class="text-pink-500 font-bold">0s</span></div>
+                                <div class="col-span-2">第七關: <span id="analysis-time-l7" class="text-emerald-500 font-bold">0s</span></div>
+                            </div>
+                            <div class="text-slate-500 max-h-[220px] overflow-y-auto pr-2 space-y-3 font-bold animate-pulse" id="analysis-diagnostics">正在生成報告...</div>
+                        </div>
+                        <div class="flex space-x-3 font-bold flex-wrap gap-y-2">
+                            <button id="btn-restart" class="flex-grow bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl text-xs candy-btn">再次挑戰 🔄</button>
+                            <button id="btn-victory-back-platform" class="flex-grow bg-pink-500 text-white py-2.5 rounded-xl text-xs candy-btn border-pink-700">返回主平台 🔮</button>
+                            <a href="https://docs.google.com/spreadsheets/d/11Gqvpy2Ss-rWiXi7rw7RwxtynrYTotw1B03Ebpsjyho/edit?usp=sharing" target="_blank" class="flex-grow bg-teal-500 text-white px-4 py-2.5 rounded-xl text-xs flex justify-center items-center gap-1.5 candy-btn border-teal-600"><i class="fa-solid fa-database"></i> 檢視試算表 📊</a>
+                        </div>
+                    </div>
+                    <!-- 結尾 AI 聊天 -->
+                    <div class="lg:col-span-6 bg-slate-50 rounded-2xl border p-4 flex flex-col h-[400px]">
+                        <div class="flex items-center space-x-2 border-b pb-3 mb-3">
+                            <span class="text-xl">🦉</span>
+                            <div><h4 class="font-extrabold text-xs text-slate-800 font-sans">引導課堂</h4><p class="text-[10px] text-emerald-500">蘇格拉底回饋</p></div>
+                        </div>
+                        <div id="ai-chat-box" class="flex-grow overflow-y-auto space-y-3 p-2 text-xs font-bold">
+                            <div class="flex items-start space-x-2">
+                                <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">🦉</div>
+                                <div class="bg-white border text-slate-600 p-3 rounded-2xl max-w-[85%]">恭喜你！有什麼最得意或不解之處？試著告訴我！</div>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex space-x-2">
+                            <input type="text" id="ai-user-input" placeholder="問問數學問題..." class="flex-grow bg-white border-2 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none font-bold focus:border-pink-500">
+                            <button id="btn-send-message" class="bg-amber-400 text-slate-900 px-4 rounded-xl text-xs font-black candy-btn border-amber-500">發送</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- 提示彈窗 (Modal) -->
+    <div id="msg-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white border-4 border-yellow-300 rounded-[2rem] max-w-sm w-full p-6 text-center shadow-2xl relative overflow-hidden">
+            <div id="modal-icon" class="text-5xl mb-3">💡</div>
+            <h3 id="modal-title" class="text-xl font-extrabold text-pink-500 mb-2 magic-title">提示訊息</h3>
+            <p id="modal-desc" class="text-slate-600 text-xs leading-relaxed mb-6 font-bold">內容...</p>
+            <div class="flex gap-2">
+                <button id="btn-modal-close" class="w-full bg-amber-400 text-slate-900 py-3 rounded-xl font-black transition-all text-xs border-b-4 border-amber-600 candy-btn">
+                    好的，我知道了！
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase 與核心邏輯腳本 -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        // ==========================================
+        // 【1. 即時時鐘與天氣函數】
+        // ==========================================
+        function updateLiveClockAndWeather() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const days = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+            const day = days[now.getDay()];
+            const hour = now.getHours().toString().padStart(2, '0');
+            const min = now.getMinutes().toString().padStart(2, '0');
+            
+            const liveTimeDisplay = document.getElementById('live-time-display');
+            if (liveTimeDisplay) {
+                liveTimeDisplay.textContent = `${year}年${month}月${date}日 ${day} ${hour}:${min}`;
+            }
+            
+            const weatherEl = document.getElementById('live-weather-display');
+            if (weatherEl) {
+                weatherEl.innerHTML = `🌤️ 新竹市 晴時多雲 28°C · 舒適`;
+            }
+        }
+
+        updateLiveClockAndWeather();
+        setInterval(updateLiveClockAndWeather, 10000);
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "",
+            authDomain: "demo.firebaseapp.com",
+            projectId: "demo",
+            storageBucket: "demo.appspot.com",
+            messagingSenderId: "12345",
+            appId: "1:12345:web:12345"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'magic-apprentice-v23';
+
+        // =======================
+        // 核心狀態與變數
+        // =======================
+        let currentUser = null;
+        let studentInfo = { class: '', no: '', name: '', points: 0, startTime: 0, endTime: 0, level: '初級學徒 (Lv.1)' };
+        let petData = { adopted: false, type: '', happiness: 100, unlockedItems: [], equippedItems: [] };
+        let unitMastery = { fraction: 50, estimate: 50, clock: 50, addition: 50, angle: 50, length: 50, geometry: 50 };
+        let completedQuiz = false;
+        let completedExercises = 0;
+        let submittedDiary = false;
+        let dailySigned = false;
+        let dailyExerciseProgress = 0;
+        let currentExerciseCorrectAns = "";
+        
+        // 遊戲計時與錯誤計算
+        let currentActiveLevel = 0;
+        let levelTimerInterval = null;
+        let levelTimes = { l1: 0, l2: 0, l3: 0, l4: 0, l5: 0, l6: 0, l7: 0 };
+        let levelWrongCounts = { l1: 0, l2: 0, l3: 0, l4: 0, l5: 0, l6: 0, l7: 0 };
+
+        // 綁定 DOM 元素以利後續畫布交互
+        const uCanvas = document.getElementById('unit-canvas');
+        const uCtx = uCanvas ? uCanvas.getContext('2d') : null;
+        let isUnitDrawing = false;
+        let unitLastX = 0, unitLastY = 0;
+        let unitTool = 'pencil';
+
+        const gCanvas = document.getElementById('geometry-canvas');
+        const gCtx = gCanvas ? gCanvas.getContext('2d') : null;
+        let isL7Drawing = false;
+        let l7LastX = 0, l7LastY = 0;
+        let l7Tool = 'pencil';
+
+        // 輔助函式：畫角與打亂陣列
+        function drawMagicAngleSVG(degrees) {
+            const svg = document.getElementById('magic-angle-svg');
+            if (!svg) return;
+            svg.innerHTML = '';
+            const angleRad = (degrees * Math.PI) / 180;
+            const len = 65;
+            const cx = 80, cy = 110;
+            const x1 = cx + len, y1 = cy;
+            const x2 = cx + len * Math.cos(angleRad), y2 = cy - len * Math.sin(angleRad);
+
+            const r = 20;
+            const ax = cx + r * Math.cos(angleRad), ay = cy - r * Math.sin(angleRad);
+            const pathD = `M ${cx + r} ${cy} A ${r} ${r} 0 0 0 ${ax} ${ay}`;
+
+            svg.innerHTML = `
+                <path d="${pathD}" fill="none" stroke="#6366f1" stroke-width="3" />
+                <line x1="${cx}" y1="${cy}" x2="${x1}" y2="${y1}" stroke="#1e293b" stroke-width="4" stroke-linecap="round" />
+                <line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="#1e293b" stroke-width="4" stroke-linecap="round" />
+                <circle cx="${cx}" cy="${cy}" r="6" fill="#6366f1" />
+            `;
+        }
+
+        function shuffleArray(array) {
+            let cur = array.slice();
+            for (let i = cur.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cur[i], cur[j]] = [cur[j], cur[i]];
+            }
+            return cur;
+        }
+
+        function hideAllGameSteps() {
+            for (let i = 1; i <= 7; i++) {
+                const el = document.getElementById(`step-level${i}`);
+                if (el) el.classList.add('hidden');
+            }
+            const victory = document.getElementById('step-victory');
+            if (victory) victory.classList.add('hidden');
+        }
+
+        function startLevelTimer(levelNum) {
+            stopLevelTimer();
+            currentActiveLevel = levelNum;
+            levelTimerInterval = setInterval(() => {
+                const key = `l${currentActiveLevel}`;
+                levelTimes[key]++;
+                const displayElem = document.getElementById(`timer-l${currentActiveLevel}`);
+                if (displayElem) {
+                    displayElem.textContent = levelTimes[key];
+                }
+            }, 1000);
+        }
+
+        function stopLevelTimer() {
+            if (levelTimerInterval) {
+                clearInterval(levelTimerInterval);
+                levelTimerInterval = null;
+            }
+        }
+
+        // 各關卡全域變數
+        let l1CurrentRound = 1;
+        const l1TotalRounds = 3;
+        let l1CurrentDenominator = 4;
+        let l1CurrentNumerator = 3;
+        let pPotionSegs = [];
+
+        // 第二關全域變數
+        let l2CurrentRound = 1;
+        const l2TotalRounds = 3;
+        let l2ActiveQuestions = [];
+        let l2AnswerVal = "";
+        const l2QuestionPool = [
+            { formula: "36 \\times 4 \\text{ 比 } 36 \\times 7 \\text{ 少了 ( } \\quad \\text{ ) 個 } 36", ans: "3" },
+            { formula: "150 \\times 9 \\text{ 比 } 150 \\times 7 \\text{ 多了 ( } \\quad \\text{ ) 個 } 150", ans: "2" },
+            { formula: "197 \\times 8 \\text{ 的答案最接近下面哪一個數？}", ans: "1600" },
+            { formula: "697 \\times 5 \\text{ 的答案最接近下面哪一個數？}", ans: "3500" },
+            { formula: "402 \\times 3 \\text{ 的答案最接近下面哪一個數？}", ans: "1200" }
+        ];
+
+        let l3StartHour = 9, l3StartMin = 15, l3Duration = 45, l3CorrectHour = 10, l3CorrectMin = 0;
+        let l4AnswerVal = 0, l5AngleType = 'right', l5UserAngleSelect = null, l5UserConceptSelect = null;
+        let l6AnswerObj = {}, l7Width = 8, l7Height = 6, l7RectArea = 48, l7TriangleArea = 24;
+
+        // 手寫板事件與時鐘拖曳狀態
+        let isLevel4EventsBound = false, isPracticeEventsBound = false, isLevel6EventsBound = false, isLevel7EventsBound = false;
+        let l3Hour = 9, l3Minute = 15, isDraggingMinuteHand = false;
+        const clockComponent = document.getElementById('clock-component');
+        const hourHand = document.getElementById('hour-hand');
+        const minuteHand = document.getElementById('minute-hand');
+        const clockDisplay = document.getElementById('clock-display');
+        const ansHourInput = document.getElementById('ans-hour');
+        const ansMinInput = document.getElementById('ans-minute');
+
+        // AI 照片與露娜精靈變數
+        let uploadedImageBase64 = "";
+        let lunaCurrentStep = 1, lunaSelectedMood = "", lunaAnswer1 = "", lunaAnswer2 = "", lunaAnswer3 = "";
+
+        const lunaStepsContent = [
+            "學徒你好！我是奧術伴讀精靈「露娜」🧚‍♀️ 請先點選今天的心情水晶！",
+            "今天你研習了什麼最讓你感到有趣的數學魔法概念呢？",
+            "有沒有遇到任何像『打不開的寶箱』一樣讓你感到困惑的小難題呢？",
+            "最後，明天你打算挑戰什麼樣的新奧術呢？"
+        ];
+
+        const fractionNames = {
+            2: "二", 3: "三", 4: "四", 5: "五", 6: "六", 7: "七", 
+            8: "八", 9: "九", 10: "十", 11: "十一", 12: "十二"
+        };
+
+        const l5AnglePool = [
+            { degrees: 45, type: "acute" },
+            { degrees: 90, type: "right" },
+            { degrees: 135, type: "obtuse" }
+        ];
+
+        const l6UnitQuestions = [
+            { qText: "5200 毫米等於幾公尺幾公分？", type: "to_m_cm", ans: { m: 5, cm: 20 } },
+            { qText: "1 公尺 8 公分等於幾毫米？", type: "to_mm", ans: { mm: 1080 } },
+            { qText: "13 公分等於幾毫米？", type: "to_mm_simple", ans: { mm: 130 } }
+        ];
+
+        // =======================
+        // UI 工具與認證
+        // =======================
+        window.showModal = function(title, desc, icon = '💡') {
+            const elTitle = document.getElementById('modal-title');
+            const elDesc = document.getElementById('modal-desc');
+            const elIcon = document.getElementById('modal-icon');
+            const modalEl = document.getElementById('msg-modal');
+            if (elTitle) elTitle.textContent = title;
+            if (elDesc) elDesc.textContent = desc;
+            if (elIcon) elIcon.textContent = icon;
+            if (modalEl) {
+                modalEl.classList.remove('hidden');
+            }
+        };
+
+        const btnModalClose = document.getElementById('btn-modal-close');
+        if (btnModalClose) {
+            btnModalClose.addEventListener('click', () => { 
+                const modalEl = document.getElementById('msg-modal');
+                if (modalEl) modalEl.classList.add('hidden');
+            });
+        }
+
+        async function initAuth() {
+            if (auth.currentUser) { currentUser = auth.currentUser; return; }
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    const cred = await signInWithCustomToken(auth, __initial_auth_token);
+                    currentUser = cred.user;
+                } else {
+                    const cred = await signInAnonymously(auth);
+                    currentUser = cred.user;
+                }
+            } catch (err) { console.log("Firebase 認證失敗：", err); }
+        }
+
+        onAuthStateChanged(auth, (user) => { if (user) currentUser = user; });
+        initAuth();
+
+        // =======================
+        // 登入綁定
+        // =======================
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            document.getElementById('btn-start-portal').disabled = true;
+            document.getElementById('login-loading').classList.remove('hidden');
+
+            studentInfo.class = document.getElementById('student-class').value;
+            studentInfo.no = document.getElementById('student-no').value;
+            studentInfo.name = document.getElementById('student-name').value;
+            studentInfo.startTime = Date.now();
+
+            if (!currentUser) await initAuth();
+
+            if (currentUser) {
+                const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'records', 'student_profile');
+                try {
+                    const snap = await getDoc(userDocRef);
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        studentInfo.points = data.points || 0;
+                        completedQuiz = data.completedQuiz || false;
+                        completedExercises = data.completedExercises || 0;
+                        submittedDiary = data.submittedDiary || false;
+                        dailySigned = data.dailySigned || false;
+                        dailyExerciseProgress = data.dailyExerciseProgress || 0;
+                        if (data.unitMastery) unitMastery = data.unitMastery;
+                        if (data.petData) petData = data.petData;
+                    } else {
+                        await setDoc(userDocRef, { class: studentInfo.class, no: studentInfo.no, name: studentInfo.name, points: 0, completedQuiz: false, lastUpdated: Date.now() });
+                    }
+                } catch (err) { console.log(err); }
+            }
+
+            document.getElementById('nav-student-display').textContent = `${studentInfo.class} ${studentInfo.no}號 ${studentInfo.name}`;
+            document.getElementById('nav-points').textContent = studentInfo.points;
+            
+            document.getElementById('nav-user-stats').classList.remove('hidden');
+            document.getElementById('btn-logout').classList.remove('hidden');
+            document.getElementById('panel-login').classList.add('hidden');
+            document.getElementById('panel-dashboard').classList.remove('hidden');
+
+            updateUnlockState();
+            updateDailyProgressUI();
+            updatePetUI();
+            updateMasteryChartUI();
+            initArchimedesWelcome();
+
+            if (dailySigned) {
+                const signBtn = document.getElementById('btn-daily-sign');
+                signBtn.textContent = "📆 已簽到"; signBtn.disabled = true; signBtn.className = "text-xs bg-slate-200 text-slate-400 px-3 py-1 rounded-full font-black";
+            }
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            location.reload(); 
+        });
+
+        // =======================
+        // 小精靈露娜日誌
+        // =======================
+        const lunaMoodBtns = document.querySelectorAll('.luna-mood-btn');
+        lunaMoodBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                lunaMoodBtns.forEach(b => { b.classList.remove('border-pink-400', 'bg-pink-50'); b.classList.add('border-slate-200', 'bg-white'); });
+                btn.classList.add('border-pink-400', 'bg-pink-50');
+                lunaSelectedMood = btn.getAttribute('data-mood');
+            });
+        });
+
+        function renderLunaStep() {
+            document.getElementById('luna-step-badge').textContent = `${lunaCurrentStep} / 4 階段`;
+            document.getElementById('luna-bubble-text').textContent = lunaStepsContent[lunaCurrentStep - 1];
+            
+            const btnPrev = document.getElementById('btn-luna-prev');
+            const btnNext = document.getElementById('btn-luna-next');
+            const inputContainer = document.getElementById('luna-input-container');
+            const moodSelector = document.getElementById('luna-mood-selector');
+            const textInput = document.getElementById('luna-text-input');
+
+            btnPrev.classList.toggle('hidden', lunaCurrentStep === 1);
+            if (lunaCurrentStep === 1) {
+                moodSelector.classList.remove('hidden'); inputContainer.classList.add('hidden'); btnNext.textContent = "下一步 ➡️";
+            } else {
+                moodSelector.classList.add('hidden'); inputContainer.classList.remove('hidden');
+                textInput.value = [null, null, lunaAnswer1, lunaAnswer2, lunaAnswer3][lunaCurrentStep] || "";
+                btnNext.textContent = lunaCurrentStep === 4 ? "✨ 凝聚 Luna 預言故事" : "下一步 ➡️";
+            }
+        }
+
+        document.getElementById('btn-luna-prev').addEventListener('click', () => { if (lunaCurrentStep > 1) { lunaCurrentStep--; renderLunaStep(); } });
+        document.getElementById('btn-luna-next').addEventListener('click', async () => {
+            const val = document.getElementById('luna-text-input').value.trim();
+            if (lunaCurrentStep === 1 && !lunaSelectedMood) return showModal("心情水晶未感應", "請先點選心情水晶！", "🔮");
+            if (lunaCurrentStep === 2 && !val) return showModal("請填寫", "請寫下喜歡的數學概念！", "🧚‍♀️");
+            if (lunaCurrentStep === 3 && !val) return showModal("請填寫", "請寫下遇到的難題！", "🧚‍♀️");
+            if (lunaCurrentStep === 4 && !val) return showModal("請填寫", "請寫下明天的挑戰！", "🧚‍♀️");
+
+            if (lunaCurrentStep === 2) lunaAnswer1 = val;
+            if (lunaCurrentStep === 3) lunaAnswer2 = val;
+            if (lunaCurrentStep === 4) { lunaAnswer3 = val; return await submitLunaDiary(); }
+            
+            lunaCurrentStep++; renderLunaStep();
+        });
+
+        async function submitLunaDiary() {
+            const btnNext = document.getElementById('btn-luna-next');
+            btnNext.disabled = true;
+            btnNext.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 預言編織中...`;
+            
+            appendPlatformMsg("🧚‍♀️ 伴讀精靈露娜", "正在飛往阿卡西之環，為你編織專屬的心靈冒險預言故事...", "loading");
+            
+            const prompt = `
+            學徒真名：【${studentInfo.name}】
+            今日心情水晶：【${lunaSelectedMood}】
+            學徒今日最有趣的數學發現：【${lunaAnswer1}】
+            今日像寶箱一樣打不開的難題：【${lunaAnswer2}】
+            學徒明日的自我挑戰：【${lunaAnswer3}】
+            
+            請發揮你溫柔、充滿魔幻和鼓勵感的伴讀精靈「露娜」口吻，為學徒編織一段 150 字內的「奧術冒險故事」。
+            故事中要把他的發現（例如某個數學觀念）化為他的「光明法杖」，把難題化為「盤據在鐘樓的黑霧怪獸」，並預言他明天將如何勇敢揮動法杖克服怪獸。結尾給予暖心的一句話鼓勵。
+            `;
+            
+            try {
+                const aiResult = await getSocraticResponse(prompt, true);
+                
+                // 移除 loading 訊息
+                const chatBox = document.getElementById('ai-platform-chat-box');
+                if (chatBox.lastChild) chatBox.lastChild.remove();
+                
+                appendPlatformMsg("🧚 Luna 魔法冒險故事", aiResult, "assistant");
+
+                submittedDiary = true; 
+                updateUnlockState();
+                studentInfo.points += 20; 
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                
+                document.getElementById('resonance-diary-card').innerHTML = `
+                    <div class="text-center p-6 flex flex-col items-center justify-center h-full space-y-4">
+                        <div class="text-6xl animate-bounce">✨🧚‍♀️📖✨</div>
+                        <h4 class="font-black text-lg text-pink-500">共鳴日記故事凝結成功！</h4>
+                        <p class="text-xs text-slate-500 max-w-sm leading-relaxed">
+                            露娜已將你的心情與修行轉化為「奧術預言故事」並傳送到你的引導對話盒中囉！你獲得了 <span class="text-amber-500 font-bold">+20 魔力</span>！
+                        </p>
+                    </div>
+                `;
+                showModal("預言結晶凝結！", "伴讀精靈露娜成功在導師對話盒中為你生成了專屬的「奧術冒險日記故事」！快去閱讀吧！", "🎉");
+            } catch (err) { 
+                showModal("失敗", "魔力對流過強，預言魔法受到阻礙，請再次點選按鈕！", "❌"); 
+                btnNext.disabled = false;
+                btnNext.textContent = "✨ 凝聚 Luna 預言故事";
+            }
+        }
+
+        // =======================
+        // 狀態與雷達圖更新
+        // =======================
+        function updateUnlockState() {
+            const condEx = document.getElementById('cond-exercises');
+            const condDiary = document.getElementById('cond-diary');
+            if (completedQuiz) {
+                if(condEx) condEx.innerHTML = `<i class="fa-solid fa-circle-check mr-1 text-emerald-500"></i> <span class="text-emerald-500">第一部分：小測驗試煉大門 (已完成通關！)</span>`;
+            } else {
+                if(condEx) condEx.innerHTML = `<i class="fa-regular fa-circle mr-1"></i> 優先完成：奧術試煉大門小測驗`;
+            }
+            if (submittedDiary) {
+                if(condDiary) condDiary.innerHTML = `<i class="fa-solid fa-circle-check mr-1 text-emerald-500"></i> <span class="text-emerald-500">撰寫並提交今日情緒共鳴日記 (已完成)</span>`;
+            }
+
+            let pCount = (completedQuiz ? 1 : 0) + (submittedDiary ? 1 : 0);
+            const barEl = document.getElementById('unlock-progress-bar');
+            if(barEl) barEl.style.width = `${pCount * 50}%`;
+            document.getElementById('unlock-progress-text').textContent = pCount >= 2 ? "🎉 封印完全解除" : `${pCount} / 2 條件`;
+
+            const pOverlay = document.getElementById('practice-locked-overlay');
+            const petOverlay = document.getElementById('pet-locked-overlay');
+            if (completedQuiz) {
+                if(pOverlay) pOverlay.classList.add('hidden');
+                if(petOverlay) petOverlay.classList.add('hidden');
+            }
+        }
+
+        function updateMasteryChartUI() {
+            for (const [unit, val] of Object.entries(unitMastery)) {
+                const fillEl = document.getElementById(`mastery-fill-${unit}`);
+                if (fillEl) {
+                    fillEl.style.width = `${val}%`;
+                    fillEl.className = `h-full rounded-full transition-all duration-500 shadow-inner ${val < 50 ? 'bg-red-400' : val < 85 ? 'bg-amber-400' : 'bg-emerald-400'}`;
+                }
+                const valEl = document.getElementById(`mastery-val-${unit}`);
+                if(valEl) valEl.textContent = `${val}%`;
+            }
+        }
+
+        // 弱點分析按鈕
+        document.getElementById('btn-realtime-diagnose').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-realtime-diagnose');
+            btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 讀取中...`;
+            
+            let weakestUnit = "fraction"; let minVal = 100;
+            for (const [unit, val] of Object.entries(unitMastery)) { if (val < minVal) { minVal = val; weakestUnit = unit; } }
+            
+            const unitNamesChinese = { fraction: "分數藥水比例", estimate: "乘法估算魔法陣", clock: "時鐘經過計算法", addition: "萬以內多重進退位", angle: "角與魔鏡結界", length: "跨單位長度對齊", geometry: "幾何面積保留" };
+
+            const advicePrompt = `學徒 ${studentInfo.name} 最弱的是【${unitNamesChinese[weakestUnit]}】(${minVal}%)。請以貓頭鷹導師的溫柔口吻，寫下 120 字內「即時弱點修煉與修行大方向指引」。`;
+            
+            try {
+                const aiResult = await getSocraticResponse(advicePrompt, true);
+                document.getElementById('realtime-advice-text').innerHTML = aiResult.replace(/\n/g, '<br>');
+            } catch (err) { showModal("失敗", "分析中斷！", "❌"); }
+            btn.disabled = false; btn.innerHTML = `<i class="fa-solid fa-sparkles"></i> 啟動即時弱點分析`;
+        });
+
+        // =======================
+        // 每日任務與寵物屋
+        // =======================
+        document.getElementById('btn-daily-sign').addEventListener('click', () => {
+            if(dailySigned) return;
+            dailySigned = true; studentInfo.points += 10; document.getElementById('nav-points').textContent = studentInfo.points;
+            const btn = document.getElementById('btn-daily-sign');
+            btn.textContent = "📆 已簽到"; btn.disabled = true; btn.className = "text-xs bg-slate-200 text-slate-400 px-3 py-1 rounded-full font-black";
+            showModal("簽到成功！", "獲得 +10 魔力", "🎉");
+        });
+
+        function updateDailyProgressUI() {
+            document.getElementById('daily-progress-text').textContent = `${dailyExerciseProgress} / 3`;
+            document.getElementById('daily-progress-fill').style.width = `${Math.min((dailyExerciseProgress / 3) * 100, 100)}%`;
+            const claimBtn = document.getElementById('btn-claim-daily-bonus');
+            if (dailyExerciseProgress >= 3) {
+                document.getElementById('daily-bonus-status').textContent = "可領取";
+                document.getElementById('daily-bonus-status').className = "text-emerald-500 font-bold animate-bounce";
+                claimBtn.classList.remove('hidden');
+            } else {
+                document.getElementById('daily-bonus-status').textContent = "修煉中";
+                document.getElementById('daily-bonus-status').className = "text-amber-500";
+                claimBtn.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('btn-claim-daily-bonus').addEventListener('click', () => {
+            if (dailyExerciseProgress < 3) return;
+            studentInfo.points += 10; dailyExerciseProgress = 0; document.getElementById('nav-points').textContent = studentInfo.points;
+            updateDailyProgressUI();
+            showModal("獎勵領取成功！", "獲得 +10 魔力", "🎉");
+        });
+
+        // ==========================================
+        // 【吉卜力精準裝飾紙娃娃 SVG 渲染引擎】
+        // ==========================================
+        function renderGhibliPetSVG() {
+            const svg = document.getElementById('ghibli-pet-svg');
+            if (!svg) return;
+            
+            const isDog = petData.type === 'dog';
+            const showHat = petData.equippedItems.includes('hat') ? 'block' : 'none';
+            const showGlasses = petData.equippedItems.includes('glasses') ? 'block' : 'none';
+            const showCrown = petData.equippedItems.includes('crown') ? 'block' : 'none';
+            const showScarf = petData.equippedItems.includes('scarf') ? 'block' : 'none';
+            const showWings = petData.equippedItems.includes('wings') ? 'block' : 'none';
+
+            let bodyContent = "";
+
+            // 1. 溫暖柔和的吉卜力風格背景裝飾
+            bodyContent += `
+                <!-- 溫馨氛圍柔光 -->
+                <circle cx="60" cy="65" r="45" fill="rgba(255, 255, 255, 0.4)" filter="blur(2px)" />
+            `;
+
+            // 2. 翅膀圖層 (最底層，精準位於身體後方兩側)
+            bodyContent += `
+                <g id="eq-wings" style="display: ${showWings};">
+                    <!-- 左翅膀 -->
+                    <path d="M 35 65 C 10 50, 10 30, 25 35 C 30 37, 30 50, 38 58 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" />
+                    <path d="M 30 60 C 15 50, 15 38, 26 42 C 28 43, 28 50, 34 54 Z" fill="#f1f5f9" />
+                    <!-- 右翅膀 -->
+                    <path d="M 85 65 C 110 50, 110 30, 95 35 C 90 37, 90 50, 82 58 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" />
+                    <path d="M 90 60 C 105 50, 105 38, 94 42 C 92 43, 92 50, 86 54 Z" fill="#f1f5f9" />
+                </g>
+            `;
+
+            if (isDog) {
+                // ====================
+                // 🐶 魔法小柴 (吉卜力大圓臉、暖柴色、亮豆眼與粉嫩大腮紅)
+                // ====================
+                bodyContent += `
+                    <!-- 身體與肥短手手 -->
+                    <ellipse cx="60" cy="88" rx="28" ry="22" fill="#e08a3c" />
+                    <ellipse cx="60" cy="86" rx="18" ry="16" fill="#fcf8f2" />
+                    <!-- 柴犬左腳/右腳 -->
+                    <circle cx="42" cy="104" r="8" fill="#e08a3c" />
+                    <circle cx="42" cy="104" r="5" fill="#fcf8f2" />
+                    <circle cx="78" cy="104" r="8" fill="#e08a3c" />
+                    <circle cx="78" cy="104" r="5" fill="#fcf8f2" />
+
+                    <!-- 大柴耳朵 (蓬鬆三角形) -->
+                    <path d="M 35 48 C 22 28, 42 22, 45 42 Z" fill="#e08a3c" stroke="#b36217" stroke-width="1.5" />
+                    <path d="M 36 45 C 27 33, 39 29, 41 41 Z" fill="#fca5a5" opacity="0.6" /> <!-- 耳內粉紅 -->
+                    
+                    <path d="M 85 48 C 98 28, 78 22, 75 42 Z" fill="#e08a3c" stroke="#b36217" stroke-width="1.5" />
+                    <path d="M 84 45 C 93 33, 81 29, 79 41 Z" fill="#fca5a5" opacity="0.6" />
+
+                    <!-- 大柴圓潤臉部 -->
+                    <ellipse cx="60" cy="62" rx="28" ry="24" fill="#e08a3c" stroke="#b36217" stroke-width="1.5" />
+                    <!-- 臉部白色區域 (柴犬花紋) -->
+                    <path d="M 35 68 C 35 52, 48 52, 60 58 C 72 52, 85 52, 85 68 C 85 82, 35 82, 35 68 Z" fill="#fcf8f2" />
+                    <!-- 眉毛 (溫暖白眉豆) -->
+                    <ellipse cx="48" cy="48" rx="3.5" ry="2" fill="#fcf8f2" />
+                    <ellipse cx="72" cy="48" rx="3.5" ry="2" fill="#fcf8f2" />
+                    <!-- 眼睛 (水靈大眼睛) -->
+                    <circle cx="45" cy="56" r="4" fill="#2d1d0f" />
+                    <circle cx="44" cy="54" r="1.2" fill="#ffffff" /> <!-- 眼光 -->
+                    <circle cx="75" cy="56" r="4" fill="#2d1d0f" />
+                    <circle cx="74" cy="54" r="1.2" fill="#ffffff" />
+
+                    <!-- 粉嫩雙頰大腮紅 (吉卜力手繪暈染感) -->
+                    <circle cx="38" cy="66" r="5" fill="#f87171" opacity="0.55" filter="blur(0.5px)" />
+                    <circle cx="82" cy="66" r="5" fill="#f87171" opacity="0.55" filter="blur(0.5px)" />
+
+                    <!-- 鼻子與微翹嘴巴 -->
+                    <polygon points="57,62 63,62 60,65" fill="#2d1d0f" />
+                    <path d="M 56 67 C 58 70, 60 70, 60 67 C 60 70, 62 70, 64 67" fill="none" stroke="#2d1d0f" stroke-width="1.5" stroke-linecap="round" />
+                `;
+            } else {
+                // ====================
+                // 🐱 奧術小橘 (大圓臉、暖黃橘色、細鬍鬚與胖嘟嘟的身體)
+                // ====================
+                bodyContent += `
+                    <!-- 貓咪尾巴 -->
+                    <path d="M 85 95 C 100 95, 105 80, 100 70 C 97 66, 92 72, 94 76 C 96 82, 92 87, 85 87 Z" fill="#fb923c" />
+
+                    <!-- 貓咪胖身體與小爪子 -->
+                    <ellipse cx="60" cy="88" rx="27" ry="21" fill="#fb923c" />
+                    <ellipse cx="60" cy="88" rx="17" ry="15" fill="#fff7ed" />
+                    <circle cx="46" cy="105" r="6" fill="#fb923c" />
+                    <circle cx="46" cy="105" r="4" fill="#fff" />
+                    <circle cx="74" cy="105" r="6" fill="#fb923c" />
+                    <circle cx="74" cy="105" r="4" fill="#fff" />
+
+                    <!-- 貓咪小耳朵 -->
+                    <path d="M 36 46 L 30 26 L 48 38 Z" fill="#fb923c" stroke="#ea580c" stroke-width="1.5" stroke-linejoin="round" />
+                    <path d="M 38 43 L 34 30 L 45 37 Z" fill="#fecdd3" opacity="0.7" />
+                    
+                    <path d="M 84 46 L 90 26 L 72 38 Z" fill="#fb923c" stroke="#ea580c" stroke-width="1.5" stroke-linejoin="round" />
+                    <path d="M 82 43 L 86 30 L 75 37 Z" fill="#fecdd3" opacity="0.7" />
+
+                    <!-- 貓咪臉部 -->
+                    <ellipse cx="60" cy="59" rx="26" ry="22" fill="#fb923c" stroke="#ea580c" stroke-width="1.5" />
+                    <!-- 嘴部花紋 -->
+                    <ellipse cx="55" cy="66" rx="6" ry="5" fill="#fff7ed" />
+                    <ellipse cx="65" cy="66" rx="6" ry="5" fill="#fff7ed" />
+
+                    <!-- 雙頰腮紅 -->
+                    <circle cx="40" cy="64" r="4.5" fill="#f472b6" opacity="0.6" filter="blur(0.5px)" />
+                    <circle cx="80" cy="64" r="4.5" fill="#f472b6" opacity="0.6" filter="blur(0.5px)" />
+
+                    <!-- 貓咪大眼睛 -->
+                    <circle cx="46" cy="53" r="4.5" fill="#1e293b" />
+                    <circle cx="45" cy="51" r="1.5" fill="#fff" /> <!-- 水光亮點 -->
+                    
+                    <circle cx="74" cy="53" r="4.5" fill="#1e293b" />
+                    <circle cx="73" cy="51" r="1.5" fill="#fff" />
+
+                    <!-- 小鼻子、鬍鬚與貓咪嘴巴 -->
+                    <polygon points="58,60 62,60 60,62" fill="#db2777" />
+                    <path d="M 57 63 C 58 65, 60 65, 60 63 C 60 65, 62 65, 63 63" fill="none" stroke="#ea580c" stroke-width="1.5" />
+                    
+                    <!-- 貓鬍鬚 -->
+                    <line x1="33" y1="62" x2="22" y2="60" stroke="#475569" stroke-width="1" />
+                    <line x1="33" y1="66" x2="21" y2="67" stroke="#475569" stroke-width="1" />
+                    <line x1="87" y1="62" x2="98" y2="60" stroke="#475569" stroke-width="1" />
+                    <line x1="87" y1="66" x2="99" y2="67" stroke="#475569" stroke-width="1" />
+                `;
+            }
+
+            // ==========================================
+            // 【裝飾品絕對定位圖層 (根據角色動態微調像素)】
+            // ==========================================
+            
+            // A. 🧙‍♂️ 巫師法帽 (精確覆蓋頭頂)
+            const hatY = isDog ? 22 : 18;
+            bodyContent += `
+                <g id="eq-hat" style="display: ${showHat};">
+                    <!-- 帽子底色藍紫色 -->
+                    <path d="M 32 ${hatY + 12} Q 60 ${hatY}, 88 ${hatY + 12} Q 60 ${hatY + 18}, 32 ${hatY + 12}" fill="#5b21b6" stroke="#311066" stroke-width="1.5" />
+                    <!-- 尖帽錐形 -->
+                    <path d="M 40 ${hatY + 11} L 60 ${hatY - 14} L 80 ${hatY + 11} Z" fill="#6d28d9" stroke="#311066" stroke-width="1.5" stroke-linejoin="round" />
+                    <!-- 金色星星帽徽 -->
+                    <polygon points="60,${hatY - 2} 62,${hatY + 2} 66,${hatY + 2} 63,${hatY + 4} 64,${hatY + 8} 60,${hatY + 5} 56,${hatY + 8} 57,${hatY + 4} 54,${hatY + 2} 58,${hatY + 2}" fill="#fbbf24" />
+                </g>
+            `;
+
+            // B. 👓 智慧眼鏡 (精準對齊雙眼)
+            const glassesY = isDog ? 56 : 53;
+            bodyContent += `
+                <g id="eq-glasses" style="display: ${showGlasses};">
+                    <!-- 左鏡框 -->
+                    <circle cx="46" cy="${glassesY}" r="9" fill="rgba(14, 165, 233, 0.25)" stroke="#1e293b" stroke-width="2.5" />
+                    <!-- 右鏡框 -->
+                    <circle cx="74" cy="${glassesY}" r="9" fill="rgba(14, 165, 233, 0.25)" stroke="#1e293b" stroke-width="2.5" />
+                    <!-- 中間鼻樑連接線 -->
+                    <path d="M 55 ${glassesY} L 65 ${glassesY}" stroke="#1e293b" stroke-width="3" stroke-linecap="round" />
+                </g>
+            `;
+
+            // C. 👑 黃金皇冠 (微傾斜置於頭頂正中)
+            const crownY = isDog ? 30 : 27;
+            bodyContent += `
+                <g id="eq-crown" style="display: ${showCrown};">
+                    <path d="M 46 ${crownY} L 42 ${crownY - 12} L 52 ${crownY - 6} L 60 ${crownY - 16} L 68 ${crownY - 6} L 78 ${crownY - 12} L 74 ${crownY} Z" fill="#fbbf24" stroke="#d97706" stroke-width="1.5" stroke-linejoin="round" />
+                    <!-- 皇冠底部紅寶石裝飾 -->
+                    <circle cx="60" cy="${crownY - 3}" r="2" fill="#ef4444" />
+                    <circle cx="50" cy="${crownY - 3}" r="1.5" fill="#3b82f6" />
+                    <circle cx="70" cy="${crownY - 3}" r="1.5" fill="#10b981" />
+                </g>
+            `;
+
+            // D. 🧣 舒適羊毛圍巾 (精確環繞在頸部)
+            const scarfY = isDog ? 76 : 73;
+            bodyContent += `
+                <g id="eq-scarf" style="display: ${showScarf};">
+                    <!-- 圍巾本體 (溫暖酒紅色) -->
+                    <rect x="42" y="${scarfY}" width="36" height="8" rx="4" fill="#ef4444" stroke="#991b1b" stroke-width="1.5" />
+                    <!-- 垂落的圍巾尾巴 -->
+                    <path d="M 68 ${scarfY + 6} L 74 ${scarfY + 18} L 80 ${scarfY + 18} L 76 ${scarfY + 6} Z" fill="#dc2626" stroke="#991b1b" stroke-width="1.2" />
+                    <!-- 黃色點綴條紋 -->
+                    <line x1="48" y1="${scarfY}" x2="48" y2="${scarfY + 8}" stroke="#facc15" stroke-width="2" />
+                    <line x1="56" y1="${scarfY}" x2="56" y2="${scarfY + 8}" stroke="#facc15" stroke-width="2" />
+                </g>
+            `;
+
+            svg.innerHTML = bodyContent;
+        }
+
+        function updatePetUI() {
+            if (!petData.adopted) {
+                document.getElementById('pet-adopt-view').classList.remove('hidden');
+                document.getElementById('pet-main-view').classList.add('hidden');
+                return;
+            }
+            document.getElementById('pet-adopt-view').classList.add('hidden');
+            document.getElementById('pet-main-view').classList.remove('hidden');
+            
+            document.getElementById('pet-happiness-badge').textContent = `😊 開心度: ${petData.happiness}%`;
+
+            // 渲染最新的 SVG 與裝飾
+            renderGhibliPetSVG();
+
+            document.querySelectorAll('.wardrobe-item').forEach(btn => {
+                const item = btn.getAttribute('data-item');
+                const lock = btn.querySelector('.lock-indicator');
+                
+                if (petData.unlockedItems.includes(item)) {
+                    lock.classList.add('hidden');
+                    if (petData.equippedItems.includes(item)) {
+                        btn.className = "wardrobe-item bg-pink-100 border-2 border-pink-400 rounded-xl p-1 flex flex-col items-center relative text-xs";
+                    } else {
+                        btn.className = "wardrobe-item bg-white border-2 border-slate-200 rounded-xl p-1 flex flex-col items-center hover:border-pink-300 relative text-xs";
+                    }
+                }
+            });
+        }
+
+        const adoptPet = (type) => {
+            if (studentInfo.points < 20) return showModal("魔力不足", "魔力不足，需要 20 點魔力結晶領養小夥伴喔！", "🔮");
+            studentInfo.points -= 20; document.getElementById('nav-points').textContent = studentInfo.points;
+            petData = { adopted: true, type: type, happiness: 100, unlockedItems: [], equippedItems: [] };
+            updatePetUI(); showModal("領養成功", "你獲得了吉卜力溫馨小夥伴！", "🎉");
+        };
+        document.getElementById('btn-adopt-dog').addEventListener('click', () => adoptPet('dog'));
+        document.getElementById('btn-adopt-cat').addEventListener('click', () => adoptPet('cat'));
+
+        document.getElementById('btn-pet-feed').addEventListener('click', () => {
+            if(studentInfo.points < 5) return showModal("魔力不足", "需要 5 點魔力", "🍗");
+            studentInfo.points -= 5; petData.happiness = Math.min(petData.happiness + 20, 100);
+            document.getElementById('nav-points').textContent = studentInfo.points; updatePetUI();
+            triggerPetHeartEffect();
+        });
+        document.getElementById('btn-pet-play').addEventListener('click', () => {
+            petData.happiness = Math.min(petData.happiness + 10, 100); updatePetUI();
+            triggerPetHeartEffect();
+        });
+
+        // 愛心噴發特效
+        function triggerPetHeartEffect() {
+            const effect = document.getElementById('pet-effect-emoji');
+            if (!effect) return;
+            effect.style.opacity = "1";
+            effect.style.transform = "translateY(-20px) scale(1.3)";
+            setTimeout(() => {
+                effect.style.opacity = "0";
+                effect.style.transform = "translateY(0px) scale(1)";
+            }, 1000);
+        }
+
+        document.querySelectorAll('.wardrobe-item').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const item = btn.getAttribute('data-item'); const cost = parseInt(btn.getAttribute('data-cost'));
+                if (petData.unlockedItems.includes(item)) {
+                    if (petData.equippedItems.includes(item)) { 
+                        petData.equippedItems = petData.equippedItems.filter(i => i !== item); 
+                    } else { 
+                        petData.equippedItems.push(item); 
+                    }
+                    updatePetUI();
+                } else {
+                    if (studentInfo.points < cost) return showModal("魔力不足", `解鎖此飾品需花費 ${cost} 點魔力`, "🔒");
+                    studentInfo.points -= cost; document.getElementById('nav-points').textContent = studentInfo.points;
+                    petData.unlockedItems.push(item); petData.equippedItems.push(item);
+                    updatePetUI(); showModal("解鎖成功", "服飾已解鎖並成功穿戴！", "🎉");
+                }
+            });
+        });
+
+        // =======================
+        // 賢者 AI 引導與相機 (含指數退避演算法)
+        // =======================
+        function initArchimedesWelcome() {
+            document.getElementById('ai-platform-chat-box').innerHTML = `<div class="flex items-start space-x-2"><div class="w-6 h-6 rounded-full bg-slate-100 flex justify-center text-xs">🦉</div><div class="bg-slate-50 border p-2.5 rounded-2xl font-bold text-slate-700">嗨，${studentInfo.name}！我是阿基米德賢者，遇到不會的可以拍下來問我喔！✨</div></div>`;
+        }
+
+        document.getElementById('btn-camera-upload').addEventListener('click', () => document.getElementById('ai-image-file-input').click());
+        document.getElementById('ai-image-file-input').addEventListener('change', (e) => {
+            const f = e.target.files[0]; if(!f) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                uploadedImageBase64 = ev.target.result.split(',')[1];
+                document.getElementById('image-preview-el').src = ev.target.result;
+                document.getElementById('image-preview-container').classList.remove('hidden');
+            };
+            reader.readAsDataURL(f);
+        });
+        document.getElementById('btn-remove-preview').addEventListener('click', () => {
+            uploadedImageBase64 = ""; document.getElementById('image-preview-container').classList.add('hidden'); document.getElementById('ai-image-file-input').value = "";
+        });
+
+        const sendMsg = async () => {
+            const input = document.getElementById('ai-platform-input');
+            const text = input.value.trim();
+            if (!text && !uploadedImageBase64) return;
+            
+            appendPlatformMsg(studentInfo.name, text || "(附上相片)", "user");
+            input.value = "";
+            const imgData = uploadedImageBase64;
+            uploadedImageBase64 = ""; document.getElementById('image-preview-container').classList.add('hidden');
+
+            const loading = appendPlatformMsg("🦉", "思考中...", "loading");
+            try {
+                const res = await getSocraticResponse(text || "請解析這張圖片", false, imgData);
+                loading.remove(); appendPlatformMsg("🦉", res, "assistant");
+            } catch(e) { 
+                loading.remove(); 
+                appendPlatformMsg("🦉", "魔力對流太強大，賢者暫時無法感應，請再說一次或重新傳送圖片！", "assistant"); 
+            }
+        };
+        document.getElementById('btn-send-platform-msg').addEventListener('click', sendMsg);
+        document.getElementById('ai-platform-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') sendMsg(); });
+
+        function appendPlatformMsg(sender, text, role) {
+            const box = document.getElementById('ai-platform-chat-box');
+            const d = document.createElement('div'); d.className = "flex items-start space-x-2";
+            const icon = role === 'user' ? '🧙' : '🦉';
+            const bodyCls = role === 'user' ? 'bg-white border text-slate-600 p-2 font-bold text-slate-700' : (role === 'loading' ? 'bg-slate-50 italic text-slate-400 p-2' : 'bg-white border text-slate-650 p-2 font-bold text-slate-700');
+            d.innerHTML = `<div class="w-6 h-6 rounded-full bg-slate-100 flex justify-center text-[10px]">${icon}</div><div class="${bodyCls} rounded-xl max-w-[85%]">${text.replace(/\n/g,'<br>')}</div>`;
+            box.appendChild(d); box.scrollTop = box.scrollHeight; return d;
+        }
+
+        const sysPromptBase = `你是國小三年級導師阿基米德，採用蘇格拉底教學法。嚴禁給答案，請用溫柔、童趣語氣反問學生。`;
+
+        // ==========================================
+        // 【核心 Gemini API 通訊協定 (包含指數退避機制)】
+        // ==========================================
+        async function fetchWithRetry(url, options, retries = 5, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) {
+                        return await response.json();
+                    }
+                } catch (error) {
+                    // 自動重試，不將重試 Log 輸出到主控台
+                }
+                if (i < retries - 1) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // 指數退避: 1s, 2s, 4s, 8s, 16s
+                }
+            }
+            throw new Error("Gemini 魔法門戶傳輸重試失敗！");
+        }
+
+        async function getSocraticResponse(q, bypass = false, base64 = null) {
+            const apiKey = "";
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            const payload = { 
+                contents: [{ 
+                    role: "user", 
+                    parts: [{ text: q }] 
+                }], 
+                systemInstruction: { 
+                    parts: [{ text: bypass ? "你是一位名為「露娜」的溫馨伴讀精靈，請用生動夢幻且富有童趣的文字，編織一段精彩的魔法預言冒險。不要說多餘的話，直接給出冒險故事。" : sysPromptBase }] 
+                } 
+            };
+            
+            if (base64) {
+                payload.contents[0].parts.push({ 
+                    inlineData: { mimeType: "image/png", data: base64 } 
+                });
+            }
+
+            const options = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            };
+
+            const data = await fetchWithRetry(url, options);
+            if (data.candidates && data.candidates[0].content.parts[0].text) {
+                return data.candidates[0].content.parts[0].text;
+            }
+            throw new Error("無效的回應");
+        }
+
+        // ==========================================
+        // 【✨ 奧術修行大師：Gemini API 客製題動態生成】
+        // ==========================================
+        async function fetchAICustomQuestion(unitName, difficulty) {
+            const apiKey = "";
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const prompt = `
+            請出一道適合台灣國小三年級程度的數學謎題。
+            
+            目前設定：
+            數學單元領域：【${unitName}】
+            修行難度：【${difficulty === 'easy' ? '基礎磨練' : '進階奧術'}】
+            
+            要求：
+            1. 故事背景：請用奇幻魔法學校（例如調配藥水、召喚防禦盾、傳送法陣、時空鐘樓、尋找魔鏡等）的包裝。
+            2. 出題主題要完全契合指定的【${unitName}】單元：
+               - fraction (分數藥水比例): 考等分觀念或簡易分數加減。
+               - estimate (乘法估算魔法陣): 考三位數乘一位數的估算與大約值。
+               - clock (時鐘經過計算法): 考經過了幾分幾秒、或幾點幾分的推算。
+               - addition (萬以內多重進退位): 考萬以內加減法與列式。
+               - angle (角與魔鏡結界): 考銳角、直角、鈍角判定、或角的大小不隨邊長改變之觀念。
+               - length (跨單位長度對齊): 考公尺、公分、毫米跨單位換算。
+               - geometry (幾何面積保留): 考切割拼接圖形後，總面積不變的守恆性質。
+            3. 提供 exactly 3 或 4 個單一選擇題選項，其中只有一個是完全正確的答案。
+            4. 回應必須是純 JSON，其格式如下：
+            {
+               "question": "這裡寫魔法情境與問題內容",
+               "options": ["選項1", "選項2", "選項3", "選項4"],
+               "answer": "完全與 options 中其中一項一模一樣的正確答案字串"
+            }
+            `;
+
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            question: { type: "STRING" },
+                            options: {
+                                type: "ARRAY",
+                                items: { type: "STRING" }
+                            },
+                            answer: { type: "STRING" }
+                        },
+                        required: ["question", "options", "answer"]
+                    }
+                }
+            };
+
+            const options = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            };
+
+            const data = await fetchWithRetry(url, options);
+            if (data.candidates && data.candidates[0].content.parts[0].text) {
+                return JSON.parse(data.candidates[0].content.parts[0].text);
+            }
+            throw new Error("無法解析 AI 題目格式");
+        }
+
+        // =======================
+        // 奧術練習題庫 (自修與 AI 雙模)
+        // =======================
+        async function summonAICustomChallenge() {
+            const unit = document.getElementById('select-unit').value;
+            const diff = document.getElementById('select-difficulty').value;
+            const actionArea = document.getElementById('exercise-action-area');
+            const verifyBtn = document.getElementById('btn-verify-exercise');
+            const questionArea = document.getElementById('exercise-question-area');
+            const pPanel = document.getElementById('practice-scratchpad-panel');
+            const btnSummonAI = document.getElementById('btn-summon-ai-exercise');
+
+            if (!actionArea || !verifyBtn || !questionArea || !btnSummonAI) return;
+
+            btnSummonAI.disabled = true;
+            btnSummonAI.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 奧術召喚中...`;
+            questionArea.innerHTML = `<span class="animate-pulse text-indigo-505 font-bold"><i class="fa-solid fa-wand-sparkles text-lg animate-spin mr-2"></i> 正在向虛空中呼喚大魔導師，客製全新的 AI 奧術試煉...</span>`;
+            actionArea.classList.add('hidden');
+            verifyBtn.classList.add('hidden');
+
+            const unitNamesChinese = { fraction: "分數藥水比例", estimate: "乘法估算魔法陣", clock: "時鐘經過計算法", addition: "萬以內多重進退位", angle: "角與魔鏡結界", length: "跨單位長度對齊", geometry: "幾何面積保留" };
+
+            try {
+                const aiQuestion = await fetchAICustomQuestion(unitNamesChinese[unit], diff);
+                
+                if(unit === 'addition') { 
+                    if (pPanel) pPanel.classList.remove('hidden'); 
+                    initPracticeScratchpad(); 
+                } else { 
+                    if (pPanel) pPanel.classList.add('hidden'); 
+                }
+
+                questionArea.textContent = `✨ AI 客製題：${aiQuestion.question}`;
+                currentExerciseCorrectAns = aiQuestion.answer;
+
+                actionArea.classList.remove('hidden');
+                verifyBtn.classList.remove('hidden');
+                actionArea.innerHTML = "";
+
+                aiQuestion.options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left bg-white border-2 border-slate-100 hover:border-pink-300 p-2.5 rounded-2xl text-slate-750 text-xs transition-all font-bold";
+                    btn.textContent = opt;
+                    
+                    btn.addEventListener('click', () => {
+                        actionArea.querySelectorAll('button').forEach(b => {
+                            b.classList.remove('border-pink-400', 'bg-pink-50');
+                            b.removeAttribute('data-selected');
+                        });
+                        btn.classList.add('border-pink-400', 'bg-pink-50');
+                        btn.setAttribute('data-selected', 'true');
+                    });
+                    actionArea.appendChild(btn);
+                });
+
+            } catch (err) {
+                showModal("AI 奧術流紊亂", "可能由於虛空亂流，召喚失败！為你切換至【標準內建模擬題】！", "⚠️");
+                summonRandomExercise(unit, diff);
+            } finally {
+                btnSummonAI.disabled = false;
+                btnSummonAI.innerHTML = `✨ 召喚 AI 奧術客製題`;
+            }
+        }
+
+        // 綁定 AI 召喚按鈕
+        document.getElementById('btn-summon-ai-exercise').addEventListener('click', summonAICustomChallenge);
+
+        function summonRandomExercise(unit, diff) {
+            const actionArea = document.getElementById('exercise-action-area');
+            const verifyBtn = document.getElementById('btn-verify-exercise');
+            const questionArea = document.getElementById('exercise-question-area');
+            const pPanel = document.getElementById('practice-scratchpad-panel');
+
+            if (!actionArea || !verifyBtn || !questionArea) return;
+
+            actionArea.classList.remove('hidden');
+            verifyBtn.classList.remove('hidden');
+            actionArea.innerHTML = "";
+
+            if(unit === 'addition') { 
+                if (pPanel) pPanel.classList.remove('hidden'); 
+                initPracticeScratchpad(); 
+            } else { 
+                if (pPanel) pPanel.classList.add('hidden'); 
+            }
+
+            let questionText = "";
+            let options = [];
+            let correctAns = "";
+            let inputMode = false;
+
+            if (unit === 'fraction') {
+                const den = Math.floor(Math.random() * 6) + 5;
+                const num = Math.floor(Math.random() * (den - 1)) + 1;
+                if (diff === 'easy') {
+                    questionText = `🧪 分數比例：請問 1 瓶魔法回復藥水如果被等分成 ${den} 格，塗滿其中的 ${num} 格，是幾瓶藥水？`;
+                    correctAns = `${num}/${den} 瓶`;
+                    options = [`${num}/${den} 瓶`, `${den}/${num} 瓶`, `${den - num}/${den} 瓶`, `1/${den} 瓶`].sort(() => Math.random() - 0.5);
+                } else {
+                    const extra = Math.floor(Math.random() * (den - num - 1)) + 1;
+                    const remain = Math.max(1, den - num - extra);
+                    questionText = `🧪 分數應用題：1 瓶藥水有 ${den} 格。小源喝了 ${num} 格，小柴喝了 ${extra} 格。瓶子裡還剩下幾瓶藥水？`;
+                    correctAns = `${remain}/${den} 瓶`;
+                    options = [`${remain}/${den} 瓶`, `${num + extra}/${den} 瓶`, `${Math.max(1, remain - 1)}/${den} 瓶`, `${Math.min(den, remain + 1)}/${den} 瓶`].sort(() => Math.random() - 0.5);
+                }
+            } 
+            else if (unit === 'estimate') {
+                const base = [198, 203, 397, 402, 599, 601, 796][Math.floor(Math.random() * 7)];
+                const multiplier = Math.floor(Math.random() * 6) + 3;
+                const roundedBase = Math.round(base / 100) * 100;
+                const approx = roundedBase * multiplier;
+                if (diff === 'easy') {
+                    questionText = `🔮 估算魔法：${base} × ${multiplier} 的計算結果，最接近哪一個數？`;
+                    correctAns = `${approx}`;
+                    options = [`${approx}`, `${approx - roundedBase}`, `${approx + roundedBase}`, `${approx - 500}`].sort(() => Math.random() - 0.5);
+                } else {
+                    questionText = `🔮 應用題：一包奧術防禦石賣 ${base} 元，學園買了 ${multiplier} 包。請問總共最接近付幾張百元鈔票？`;
+                    const bills = approx / 100;
+                    correctAns = `${bills} 張`;
+                    options = [`${bills} 張`, `${bills - multiplier} 張`, `${bills + multiplier} 張`, `${Math.max(5, bills - 5)} 張`].sort(() => Math.random() - 0.5);
+                }
+            } 
+            else if (unit === 'clock') {
+                const startH = Math.floor(Math.random() * 11) + 1;
+                const startM = [0, 15, 30, 45][Math.floor(Math.random() * 4)];
+                const duration = [15, 30, 45, 60][Math.floor(Math.random() * 4)];
+                let endM = startM + duration;
+                let endH = startH;
+                if (endM >= 60) { endH += Math.floor(endM / 60); endM %= 60; }
+                if (endH > 12) endH -= 12;
+                const formatEndM = endM === 0 ? "整" : `${endM} 分`;
+
+                if (diff === 'easy') {
+                    questionText = `⏱️ 時間經過：現在是下午 ${startH} 點 ${startM === 0 ? "整" : startM + " 分"}，再過 ${duration} 分鐘後，是下午幾點幾分？`;
+                    correctAns = `下午 ${endH} 點 ${formatEndM}`;
+                    options = [`下午 ${endH} 點 ${formatEndM}`, `下午 ${endH} 點 ${startM} 分`, `下午 ${startH} 點 ${formatEndM}`, `下午 ${(endH + 1) > 12 ? 1 : endH + 1} 點 ${formatEndM}`].sort(() => Math.random() - 0.5);
+                } else {
+                    const elapsed = [45, 75, 90][Math.floor(Math.random() * 3)];
+                    questionText = `⏱️ 時間推算：學徒在早上 ${startH} 點 ${startM === 0 ? "整" : startM + " 分"} 開始修煉，直到中午結束共花了 ${elapsed} 分鐘。請問結束時刻是幾點幾分？`;
+                    let finishM = startM + elapsed;
+                    let finishH = startH + Math.floor(finishM / 60);
+                    finishM %= 60;
+                    if (finishH > 12) finishH -= 12;
+                    correctAns = `${finishH} 點 ${finishM === 0 ? "整" : finishM + " 分"}`;
+                    options = [`${finishH} 點 ${finishM === 0 ? "整" : finishM + " 分"}`, `${finishH} 點 ${startM} 分`, `${startH} 點 ${finishM === 0 ? "整" : finishM + " 分"}`, `${finishH + 1} 點 ${finishM === 0 ? "整" : finishM + " 分"}`].sort(() => Math.random() - 0.5);
+                }
+            } 
+            else if (unit === 'addition') {
+                inputMode = true;
+                const numA = Math.floor(Math.random() * 4000) + 4000;
+                const numB = Math.floor(Math.random() * 2500) + 1200;
+                if (diff === 'easy') {
+                    questionText = `⚡ 計算萬以內的多重進退位：${numA} - ${numB} ＝ ? (可利用右側草稿紙列直式)`;
+                } else {
+                    questionText = `⚡ 計算題：小橘今天在神殿獲得了 ${numA} 點經驗，買巫師帽花去了 ${numB} 點。請問小橘還剩下幾點經驗值？`;
+                }
+                correctAns = (numA - numB).toString();
+            } 
+            else if (unit === 'angle') {
+                if (diff === 'easy') {
+                    questionText = `📐 直角判定：拿出三角板靠在魔鏡的神秘角上，發現它「比直角還要小」，請問這是什麼角？`;
+                    correctAns = "銳角";
+                    options = ["銳角", "直角", "鈍角"].sort(() => Math.random() - 0.5);
+                } else {
+                    questionText = `📐 角的大小觀念：用放大鏡把一個 30 度的銳角的「兩條邊畫得更長、更長」，這個角的大小會發生什麼事？`;
+                    correctAns = "大小完全不變";
+                    options = ["大小完全不變", "角會變大 📈", "角會變小 📉"].sort(() => Math.random() - 0.5);
+                }
+            } 
+            else if (unit === 'length') {
+                const cm = Math.floor(Math.random() * 15) + 5; 
+                const mm = Math.floor(Math.random() * 9) + 1;
+                const totalMm = cm * 10 + mm;
+                if (diff === 'easy') {
+                    questionText = `📏 長度對齊：請換算長度！ ${cm} 公分 ${mm} 毫米等於多少毫米？`;
+                    correctAns = `${totalMm} 毫米`;
+                    options = [`${totalMm} 毫米`, `${cm * 100 + mm} 毫米`, `${cm + mm} 毫米`, `${totalMm * 10} 毫米`].sort(() => Math.random() - 0.5);
+                } else {
+                    const m = Math.floor(Math.random() * 4) + 1;
+                    const totalMmWithM = m * 1000 + cm * 10;
+                    questionText = `📏 進階換算：請問 ${m} 公尺 ${cm} 公分等於多少毫米？`;
+                    correctAns = `${totalMmWithM} 毫米`;
+                    options = [`${totalMmWithM} 毫米`, `${m * 100 + cm} 毫米`, `${m * 1000 + cm} 毫米`, `${totalMmWithM / 10} 毫米`].sort(() => Math.random() - 0.5);
+                }
+            } 
+            else if (unit === 'geometry') {
+                const w = [6, 8, 10, 12][Math.floor(Math.random() * 4)];
+                const h = [4, 6][Math.floor(Math.random() * 2)];
+                const rectArea = w * h;
+                const triArea = rectArea / 2;
+                if (diff === 'easy') {
+                    questionText = `🧱 幾何牆：一個長 ${w} 公分、寬 ${h} 公分的長方形。若我們切對角線對折切開，其中一個三角形的面積是幾平方公分？`;
+                    correctAns = `${triArea} 平方公分`;
+                    options = [`${triArea} 平方公分`, `${rectArea} 平方公分`, `${triArea / 2} 平方公分`].sort(() => Math.random() - 0.5);
+                } else {
+                    questionText = `🧱 面積保留律：如果把幾何拼圖切碎，只要拼接時完全沒有重疊或空隙，拼好後新形狀的總面積會？`;
+                    correctAns = "完全不變 (面積保留)";
+                    options = ["完全不變 (面積保留)", "變碎所以面積縮小 📉", "形狀改變所以面積變大 📈"].sort(() => Math.random() - 0.5);
+                }
+            }
+
+            questionArea.textContent = questionText;
+            currentExerciseCorrectAns = correctAns;
+
+            if (inputMode) {
+                actionArea.innerHTML = `
+                    <input type="number" id="exercise-input" placeholder="請輸入數值答案" class="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-2 text-center text-xs font-bold outline-none focus:border-pink-400">
+                `;
+                document.getElementById('exercise-input').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') document.getElementById('btn-verify-exercise').click();
+                });
+            } else {
+                options = Array.from(new Set(options));
+                if (!options.includes(correctAns)) {
+                    options[0] = correctAns;
+                    options = shuffleArray(options);
+                }
+
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left bg-white border-2 border-slate-100 hover:border-pink-300 p-2.5 rounded-2xl text-slate-700 text-xs transition-all font-bold";
+                    btn.textContent = opt;
+                    
+                    btn.addEventListener('click', () => {
+                        actionArea.querySelectorAll('button').forEach(b => {
+                            b.classList.remove('border-pink-400', 'bg-pink-50');
+                            b.removeAttribute('data-selected');
+                        });
+                        btn.classList.add('border-pink-400', 'bg-pink-50');
+                        btn.setAttribute('data-selected', 'true');
+                    });
+                    actionArea.appendChild(btn);
+                });
+            }
+        }
+
+        document.getElementById('btn-verify-exercise').addEventListener('click', () => {
+            const input = document.getElementById('exercise-input');
+            const unit = document.getElementById('select-unit').value;
+            let selectedVal = "";
+
+            if (input) {
+                selectedVal = input.value.trim();
+            } else {
+                const selectedBtn = document.getElementById('exercise-action-area').querySelector('button[data-selected="true"]');
+                if (selectedBtn) {
+                    selectedVal = selectedBtn.textContent.trim();
+                }
+            }
+
+            if (!selectedVal) {
+                showModal("校對錯誤", "你尚未輸入答案或點選任何選項！", "❓");
+                return;
+            }
+
+            if (selectedVal === currentExerciseCorrectAns) {
+                completedExercises++; dailyExerciseProgress++;
+                studentInfo.points += 15; document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery[unit] = Math.min(100, unitMastery[unit] + 10);
+                updateMasteryChartUI(); updateUnlockState(); updateDailyProgressUI();
+                showModal("正確！🌟", "恭喜答對！你獲得了 15 點魔力結晶，本單元修行掌握度上升！", "🎉");
+                
+                const difficulty = document.getElementById('select-difficulty').value;
+                summonRandomExercise(unit, difficulty);
+            } else {
+                studentInfo.points -= 5; document.getElementById('nav-points').textContent = Math.max(0, studentInfo.points);
+                unitMastery[unit] = Math.max(10, unitMastery[unit] - 5);
+                updateMasteryChartUI();
+                showModal("計算不夠精確...", "魔法能量失衡！請再次觀察題目、或用右側草稿紙再算一次喔！(扣除 -5 魔力)", "❌");
+            }
+        });
+
+        // 綁定自主練習召喚按鈕
+        document.getElementById('btn-summon-exercise').addEventListener('click', () => {
+            const unit = document.getElementById('select-unit').value;
+            const diff = document.getElementById('select-difficulty').value;
+            summonRandomExercise(unit, diff);
+        });
+
+        // 自修手寫板
+        const pCanvas = document.getElementById('practice-scratchpad');
+        const pCtx = pCanvas ? pCanvas.getContext('2d') : null;
+        let pDrawing = false, plX=0, plY=0, pTool='pencil';
+        function initPracticeScratchpad() {
+            if(!pCanvas) return; pCanvas.width = pCanvas.parentElement.clientWidth; pCanvas.height = pCanvas.parentElement.clientHeight;
+            pCtx.fillStyle="#fff"; pCtx.fillRect(0,0,pCanvas.width,pCanvas.height);
+            if(isPracticeEventsBound) return; isPracticeEventsBound = true;
+            pCanvas.addEventListener('mousedown', e => { pDrawing=true; plX=e.offsetX; plY=e.offsetY; });
+            pCanvas.addEventListener('mousemove', e => {
+                if(!pDrawing) return; pCtx.beginPath(); pCtx.moveTo(plX,plY); pCtx.lineTo(e.offsetX,e.offsetY);
+                pCtx.strokeStyle= pTool==='pencil'?'#ec4899':'#fff'; pCtx.lineWidth= pTool==='pencil'?3:15; pCtx.stroke(); plX=e.offsetX; plY=e.offsetY;
+            });
+            pCanvas.addEventListener('mouseup', () => pDrawing=false);
+            
+            pCanvas.addEventListener('touchstart', (e) => {
+                const rect = pCanvas.getBoundingClientRect();
+                plX = e.touches[0].clientX - rect.left;
+                plY = e.touches[0].clientY - rect.top;
+                pDrawing = true;
+            }, {passive: true});
+            pCanvas.addEventListener('touchmove', (e) => {
+                if (!pDrawing) return;
+                const rect = pCanvas.getBoundingClientRect();
+                const x = e.touches[0].clientX - rect.left;
+                const y = e.touches[0].clientY - rect.top;
+                pCtx.beginPath(); pCtx.moveTo(plX, plY); pCtx.lineTo(x, y);
+                pCtx.strokeStyle = pTool === 'pencil' ? '#ec4899' : '#ffffff';
+                pCtx.lineWidth = pTool === 'pencil' ? 3 : 15; pCtx.stroke();
+                [plX, plY] = [x, y];
+            }, {passive: true});
+            pCanvas.addEventListener('touchend', () => pDrawing = false);
+        }
+        document.getElementById('btn-practice-pencil').addEventListener('click', () => pTool='pencil');
+        document.getElementById('btn-practice-eraser').addEventListener('click', () => pTool='eraser');
+        document.getElementById('btn-practice-clear').addEventListener('click', () => { pCtx.fillRect(0,0,pCanvas.width,pCanvas.height); });
+
+
+        // ==========================================
+        // 奧術試煉大門 (100% 重塑 L1-L7 真實連貫邏輯)
+        // ==========================================
+        document.getElementById('btn-enter-game').addEventListener('click', () => {
+            document.getElementById('panel-dashboard').classList.add('hidden');
+            document.getElementById('panel-game-container').classList.remove('hidden');
+            
+            hideAllGameSteps();
+            document.getElementById('step-level1').classList.remove('hidden');
+            
+            l1CurrentRound = 1;
+            levelTimes = { l1: 0, l2: 0, l3: 0, l4: 0, l5: 0, l6: 0, l7: 0 };
+            levelWrongCounts = { l1: 0, l2: 0, l3: 0, l4: 0, l5: 0, l6: 0, l7: 0 };
+            
+            startLevelTimer(1);
+            generateLevel1Question();
+        });
+
+        document.getElementById('btn-back-to-platform').addEventListener('click', () => {
+            stopLevelTimer();
+            document.getElementById('panel-game-container').classList.add('hidden');
+            document.getElementById('panel-dashboard').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-victory-back-platform').addEventListener('click', () => {
+            document.getElementById('step-victory').classList.add('hidden');
+            document.getElementById('panel-game-container').classList.add('hidden');
+            document.getElementById('panel-dashboard').classList.remove('hidden');
+        });
+
+        // 時鐘拖曳與增減聯動事件 (Level 3)
+        if (clockComponent) {
+            clockComponent.addEventListener('mousedown', (e) => { isDraggingMinuteHand = true; rotateHand(e); });
+            document.addEventListener('mousemove', (e) => { if (isDraggingMinuteHand) rotateHand(e); });
+            document.addEventListener('mouseup', () => { isDraggingMinuteHand = false; });
+            
+            clockComponent.addEventListener('touchstart', (e) => { isDraggingMinuteHand = true; rotateHand(e.touches[0]); }, { passive: true });
+            document.addEventListener('touchmove', (e) => { if (isDraggingMinuteHand) rotateHand(e.touches[0]); }, { passive: true });
+            document.addEventListener('touchend', () => { isDraggingMinuteHand = false; });
+        }
+        
+        function rotateHand(e) {
+            if(!clockComponent || !minuteHand || !hourHand) return;
+            const rect = clockComponent.getBoundingClientRect();
+            let angle = Math.atan2(e.clientY - (rect.top+rect.height/2), e.clientX - (rect.left+rect.width/2)) * 180/Math.PI + 90;
+            if (angle < 0) angle += 360;
+            const min = Math.round(angle/6)%60;
+            
+            if (isDraggingMinuteHand) {
+                if (l3Minute > 45 && min < 15) {
+                    l3Hour = l3Hour === 12 ? 1 : l3Hour+1;
+                } else if (l3Minute < 15 && min > 45) {
+                    l3Hour = l3Hour === 1 ? 12 : l3Hour-1;
+                }
+            }
+            l3Minute = min;
+            updateClockUI();
+        }
+
+        // L1 至 L7 各關卡校對與連動過渡
+        function generateLevel1Question() {
+            l1CurrentDenominator = Math.floor(Math.random() * 6) + 3; // 3~8等分
+            l1CurrentNumerator = Math.floor(Math.random() * (l1CurrentDenominator - 1)) + 1;
+
+            const denName = fractionNames[l1CurrentDenominator] || l1CurrentDenominator;
+            const numName = fractionNames[l1CurrentNumerator] || l1CurrentNumerator;
+            const questionTextEl = document.getElementById('l1-question-text');
+            if (questionTextEl) {
+                questionTextEl.innerHTML = `請幫我調配出剛剛好 <strong class="text-pink-500 text-xl font-black">「${denName}分之${numName}」瓶 (${l1CurrentNumerator}/${l1CurrentDenominator})</strong> 的七彩藥水！`;
+            }
+            const progressEl = document.getElementById('l1-progress');
+            if (progressEl) progressEl.textContent = `${l1CurrentRound}/${l1TotalRounds}`;
+
+            const bottle = document.getElementById('potion-bottle-container');
+            if (bottle) {
+                bottle.innerHTML = "";
+                pPotionSegs = new Array(l1CurrentDenominator).fill(0);
+
+                for (let i = 0; i < l1CurrentDenominator; i++) {
+                    const seg = document.createElement('div');
+                    seg.setAttribute('data-index', i);
+                    seg.className = "potion-segment w-full cursor-pointer transition-all duration-200 flex items-center justify-center text-slate-400 hover:bg-slate-100 border-t border-dashed border-slate-300 text-xs font-bold";
+                    seg.style.height = `${100 / l1CurrentDenominator}%`;
+                    seg.textContent = i + 1;
+                    
+                    seg.addEventListener('click', () => {
+                        const idx = parseInt(seg.getAttribute('data-index'));
+                        const isCurrentlyActive = pPotionSegs[idx] === 1;
+
+                        if (isCurrentlyActive && (idx === l1CurrentDenominator - 1 || pPotionSegs[idx + 1] === 0)) {
+                            for (let j = idx; j < l1CurrentDenominator; j++) pPotionSegs[j] = 0;
+                        } else {
+                            for (let j = 0; j < l1CurrentDenominator; j++) pPotionSegs[j] = j <= idx ? 1 : 0;
+                        }
+                        updatePotionUI();
+                    });
+                    bottle.appendChild(seg);
+                }
+            }
+            updatePotionUI();
+        }
+
+        document.getElementById('btn-verify-level1').addEventListener('click', () => {
+            const filledCount = pPotionSegs.reduce((a, b) => a + b, 0);
+            if (filledCount === l1CurrentNumerator) {
+                studentInfo.points += 10;
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery.fraction = Math.min(100, unitMastery.fraction + 15);
+                updateMasteryChartUI();
+
+                if (l1CurrentRound < l1TotalRounds) {
+                    showModal("配方正確！🧪", "調配正確！精靈開心地吃飽了，請再調配下一瓶吧！", "🔮");
+                    l1CurrentRound++;
+                    generateLevel1Question();
+                } else {
+                    showModal("第一關通關成功！🎉", "精靈為你開啟了鐘樓法陣的大門！下一關即將開始！", "🎉");
+                    setTimeout(() => {
+                        document.getElementById('step-level1').classList.add('hidden');
+                        document.getElementById('step-level2').classList.remove('hidden');
+                        startLevelTimer(2);
+                        startLevel2();
+                    }, 1800);
+                }
+            } else {
+                levelWrongCounts.l1++;
+                studentInfo.points = Math.max(0, studentInfo.points - 5);
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery.fraction = Math.max(10, unitMastery.fraction - 5);
+                updateMasteryChartUI();
+                showModal("配方不正確...", `這不是 ${l1CurrentNumerator}/${l1CurrentDenominator} 瓶喔，你調配成了 ${filledCount}/${l1CurrentDenominator} 瓶。請點格子重新調配！`, "❌");
+            }
+        });
+
+        function startLevel2() {
+            l2CurrentRound = 1;
+            const shuffled = [...l2QuestionPool].sort(() => Math.random() - 0.5);
+            l2ActiveQuestions = shuffled.slice(0, l2TotalRounds);
+            generateLevel2Question();
+        }
+
+        function generateLevel2Question() {
+            const curQ = l2ActiveQuestions[l2CurrentRound - 1];
+            l2AnswerVal = curQ.ans;
+
+            const targetContainer = document.getElementById('latex-formula-container');
+            const target = document.getElementById('drop-target');
+            if (target) {
+                target.textContent = "?";
+            }
+
+            if (targetContainer) {
+                katex.render(curQ.formula, targetContainer, { throwOnError: false });
+            }
+            const progressEl = document.getElementById('l2-progress');
+            if (progressEl) {
+                progressEl.textContent = `${l2CurrentRound}/${l2TotalRounds}`;
+            }
+
+            const stonesElements = document.querySelectorAll('.num-stone');
+            stonesElements.forEach(stone => {
+                stone.onpointerdown = null;
+                stone.onclick = null;
+                stone.onclick = () => {
+                    const val = stone.getAttribute('data-value');
+                    const dropTarget = document.getElementById('drop-target');
+                    if (dropTarget) {
+                        dropTarget.textContent = val;
+                        dropTarget.className = "text-purple-600 font-mono bg-purple-50 px-6 py-2 rounded-xl border-2 border-purple-300 min-w-[80px] text-center animate-bounce";
+                    }
+                };
+            });
+        }
+
+        document.getElementById('btn-verify-level2').addEventListener('click', () => {
+            const target = document.getElementById('drop-target');
+            const ans = target ? target.textContent.trim() : "?";
+            if (ans === l2AnswerVal.toString()) {
+                studentInfo.points += 10;
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery.estimate = Math.min(100, unitMastery.estimate + 10);
+                updateMasteryChartUI();
+
+                if (l2CurrentRound < l2TotalRounds) {
+                    showModal("符文正確！🔮", "法陣亮起光芒！快看下一道謎題！", "✨");
+                    l2CurrentRound++;
+                    generateLevel2Question();
+                } else {
+                    showModal("第二關通關成功！🎉", "法陣齒輪開始轉動，正在進入時鐘室！", "🎉");
+                    setTimeout(() => {
+                        document.getElementById('step-level2').classList.add('hidden');
+                        document.getElementById('step-level3').classList.remove('hidden');
+                        startLevelTimer(3);
+                        initLevel3Clock();
+                    }, 1800);
+                }
+            } else {
+                levelWrongCounts.l2++;
+                studentInfo.points = Math.max(0, studentInfo.points - 5);
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery.estimate = Math.max(10, unitMastery.estimate - 5);
+                updateMasteryChartUI();
+                showModal("法陣無反應...", "這並非正確的估算與乘數咒語，請重試！", "❌");
+            }
+        });
+
+        function initLevel3Clock() {
+            l3StartHour = Math.floor(Math.random() * 11) + 1;
+            const validMins = [0, 15, 30, 45];
+            l3StartMin = validMins[Math.floor(Math.random() * validMins.length)];
+            l3Duration = [15, 30, 45, 60][Math.floor(Math.random() * 4)];
+
+            const totalMins = l3StartMin + l3Duration;
+            l3CorrectHour = l3StartHour + Math.floor(totalMins / 60);
+            l3CorrectMin = totalMins % 60;
+            if (l3CorrectHour > 12) l3CorrectHour -= 12;
+
+            const formatMin = l3StartMin < 10 ? '0' + l3StartMin : l3StartMin;
+            const qEl = document.getElementById('l3-question-text-random-quiz');
+            if (qEl) {
+                qEl.innerHTML = `現在是上午 <span class="text-pink-500 font-bold">${l3StartHour} 點 ${formatMin} 分</span>，再過 <span class="text-pink-500 font-bold">${l3Duration} 分鐘</span> 鐘樓怪獸就要吃午餐了！請問那時候是幾點幾分？`;
+            }
+
+            l3Hour = l3StartHour;
+            l3Minute = l3StartMin;
+            updateClockUI();
+        }
+
+        // 綁定第三關時鐘經過驗證按鈕
+        document.getElementById('btn-verify-level3').addEventListener('click', () => {
+            const h = parseInt(document.getElementById('ans-hour').value);
+            const m = parseInt(document.getElementById('ans-minute').value);
+            if (h === l3CorrectHour && m === l3CorrectMin) {
+                studentInfo.points += 10;
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery.clock = Math.min(100, unitMastery.clock + 15);
+                updateMasteryChartUI();
+                showModal("轉動發條解鎖！🔓", "時間發條咬合完美，已排除怪獸的詛咒！進度解鎖！", "🎉");
+                setTimeout(() => {
+                    document.getElementById('step-level3').classList.add('hidden');
+                    document.getElementById('step-level4').classList.remove('hidden');
+                    startLevelTimer(4);
+                    initLevel4();
+                }, 1800);
+            } else {
+                levelWrongCounts.l3++;
+                studentInfo.points = Math.max(0, studentInfo.points - 5);
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery.clock = Math.max(10, unitMastery.clock - 5);
+                updateMasteryChartUI();
+                showModal("發條震盪...", "時針或分針對應的時間不準確喔，請再數一次！", "❌");
+            }
+        });
+
+        const canvas4 = document.getElementById('scratchpad');
+        const ctx4 = canvas4 ? canvas4.getContext('2d') : null;
+        let isDrawing4 = false;
+        let lastX4 = 0, lastY4 = 0;
+
+        function initLevel4() {
+            const wordProblems = [
+                { q: "爸爸在百貨公司買了一套 2999 元的藍牙滑鼠與 4318 元的藍牙耳機，一共要付幾元？", ans: 7317 },
+                { q: "小明存了 7010 元，買衣服和包包花了 2990 元，還剩下幾元？", ans: 4020 }
+            ];
+            const sel = wordProblems[Math.floor(Math.random() * wordProblems.length)];
+            l4AnswerVal = sel.ans;
+            const qEl = document.getElementById('l4-question');
+            if (qEl) qEl.textContent = sel.q;
+            const inputEl = document.getElementById('l4-answer-input');
+            if (inputEl) inputEl.value = "";
+
+            if (canvas4 && ctx4) {
+                canvas4.width = canvas4.parentElement.clientWidth;
+                canvas4.height = canvas4.parentElement.clientHeight;
+                ctx4.fillStyle = "#ffffff";
+                ctx4.fillRect(0, 0, canvas4.width, canvas4.height);
+
+                if (!isLevel4EventsBound) {
+                    isLevel4EventsBound = true;
+                    canvas4.addEventListener('mousedown', (e) => { isDrawing4 = true; [lastX4, lastY4] = [e.offsetX, e.offsetY]; });
+                    canvas4.addEventListener('mousemove', (e) => {
+                        if (!isDrawing4) return;
+                        ctx4.beginPath(); ctx4.moveTo(lastX4, lastY4); ctx4.lineTo(e.offsetX, e.offsetY);
+                        ctx4.strokeStyle = '#ec4899'; ctx4.lineWidth = 3; ctx4.lineCap = 'round'; ctx4.stroke();
+                        [lastX4, lastY4] = [e.offsetX, e.offsetY];
+                    });
+                    canvas4.addEventListener('mouseup', () => isDrawing4 = false);
+                    canvas4.addEventListener('mouseout', () => isDrawing4 = false);
+
+                    // 手勢觸控支援
+                    canvas4.addEventListener('touchstart', (e) => {
+                        const rect = canvas4.getBoundingClientRect();
+                        lastX4 = e.touches[0].clientX - rect.left;
+                        lastY4 = e.touches[0].clientY - rect.top;
+                        isDrawing4 = true;
+                    }, {passive: true});
+                    canvas4.addEventListener('touchmove', (e) => {
+                        if (!isDrawing4) return;
+                        const rect = canvas4.getBoundingClientRect();
+                        const x = e.touches[0].clientX - rect.left;
+                        const y = e.touches[0].clientY - rect.top;
+                        ctx4.beginPath(); ctx4.moveTo(lastX4, lastY4); ctx4.lineTo(x, y);
+                        ctx4.strokeStyle = '#ec4899'; ctx4.lineWidth = 3; ctx4.stroke();
+                        [lastX4, lastY4] = [x, y];
+                    }, {passive: true});
+                    canvas4.addEventListener('touchend', () => isDrawing4 = false);
+                }
+            }
+        }
+
+        const clearBtnL4 = document.getElementById('btn-clear-canvas');
+        if (clearBtnL4) {
+            clearBtnL4.addEventListener('click', () => {
+                if (ctx4 && canvas4) {
+                    ctx4.fillStyle = "#ffffff";
+                    ctx4.fillRect(0, 0, canvas4.width, canvas4.height);
+                }
+            });
+        }
+
+        // 第四關驗證按鈕
+        document.getElementById('btn-verify-level4').addEventListener('click', () => {
+            const val = parseInt(document.getElementById('l4-answer-input').value);
+            if (val === l4AnswerVal) {
+                studentInfo.points += 10;
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery.addition = Math.min(100, unitMastery.addition + 15);
+                updateMasteryChartUI();
+                showModal("解鎖成功！🔮", "萬以內進退位運算準確！下一關「時空魔鏡」已開啟！", "🎉");
+                setTimeout(() => {
+                    document.getElementById('step-level4').classList.add('hidden');
+                    document.getElementById('step-level5').classList.remove('hidden');
+                    startLevelTimer(5);
+                    initLevel5();
+                }, 1800);
+            } else {
+                levelWrongCounts.l4++;
+                studentInfo.points = Math.max(0, studentInfo.points - 5);
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery.addition = Math.max(10, unitMastery.addition - 5);
+                updateMasteryChartUI();
+                showModal("密碼不對...", "請在草稿紙列出直式借位算算看！", "❌");
+            }
+        });
+
+        function initLevel5() {
+            l5UserAngleSelect = null;
+            l5UserConceptSelect = null;
+
+            document.querySelectorAll('.l5-angle-opt').forEach(btn => {
+                btn.className = "l5-angle-opt bg-white border border-slate-200 hover:border-indigo-400 text-slate-700 py-2 rounded-xl text-xs font-bold";
+            });
+            document.querySelectorAll('.l5-concept-opt').forEach(btn => {
+                btn.className = "l5-concept-opt bg-white border border-slate-200 hover:border-indigo-400 text-slate-700 p-2.5 rounded-xl text-[10px] text-left leading-relaxed font-bold";
+            });
+
+            const sel = l5AnglePool[Math.floor(Math.random() * l5AnglePool.length)];
+            l5AngleType = sel.type;
+            drawMagicAngleSVG(sel.degrees);
+        }
+
+        // 第五關按鈕狀態聯動
+        document.getElementById('btn-l5-acute').addEventListener('click', () => {
+            l5UserAngleSelect = 'acute';
+            document.querySelectorAll('.l5-angle-opt').forEach(b => b.classList.remove('bg-indigo-500', 'text-white'));
+            document.getElementById('btn-l5-acute').classList.add('bg-indigo-500', 'text-white');
+        });
+        document.getElementById('btn-l5-right').addEventListener('click', () => {
+            l5UserAngleSelect = 'right';
+            document.querySelectorAll('.l5-angle-opt').forEach(b => b.classList.remove('bg-indigo-500', 'text-white'));
+            document.getElementById('btn-l5-right').classList.add('bg-indigo-500', 'text-white');
+        });
+        document.getElementById('btn-l5-obtuse').addEventListener('click', () => {
+            l5UserAngleSelect = 'obtuse';
+            document.querySelectorAll('.l5-angle-opt').forEach(b => b.classList.remove('bg-indigo-500', 'text-white'));
+            document.getElementById('btn-l5-obtuse').classList.add('bg-indigo-500', 'text-white');
+        });
+
+        document.getElementById('btn-l5-concept-yes').addEventListener('click', () => {
+            l5UserConceptSelect = 'yes';
+            document.querySelectorAll('.l5-concept-opt').forEach(b => b.classList.remove('bg-indigo-500', 'text-white'));
+            document.getElementById('btn-l5-concept-yes').classList.add('bg-indigo-500', 'text-white');
+        });
+        document.getElementById('btn-l5-concept-no').addEventListener('click', () => {
+            l5UserConceptSelect = 'no';
+            document.querySelectorAll('.l5-concept-opt').forEach(b => b.classList.remove('bg-indigo-500', 'text-white'));
+            document.getElementById('btn-l5-concept-no').classList.add('bg-indigo-500', 'text-white');
+        });
+
+        // 第五關驗證按鈕
+        document.getElementById('btn-verify-level5').addEventListener('click', () => {
+            if (!l5UserAngleSelect || !l5UserConceptSelect) {
+                showModal("請選擇答案", "請同時回答 1 與 2 兩道角的考驗題喔！", "❓");
+                return;
+            }
+            if (l5UserAngleSelect === l5AngleType && l5UserConceptSelect === 'no') {
+                studentInfo.points += 10;
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery.angle = Math.min(100, unitMastery.angle + 15);
+                updateMasteryChartUI();
+                showModal("魔鏡碎裂！🎉", "太棒了！角之結界完全退散！下關開始！", "🎉");
+                setTimeout(() => {
+                    document.getElementById('step-level5').classList.add('hidden');
+                    document.getElementById('step-level6').classList.remove('hidden');
+                    startLevelTimer(6);
+                    initLevel6();
+                }, 1800);
+            } else {
+                levelWrongCounts.l5++;
+                studentInfo.points = Math.max(0, studentInfo.points - 5);
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery.angle = Math.max(10, unitMastery.angle - 5);
+                updateMasteryChartUI();
+                showModal("魔鏡產生迷霧...", "角與直角的比對，或角的邊長性質答錯了喔。請再試一次！", "❌");
+            }
+        });
+
+        function initLevel6() {
+            const q = l6UnitQuestions[Math.floor(Math.random() * l6UnitQuestions.length)];
+            l6AnswerObj = q;
+
+            const qTextEl = document.getElementById('l6-question-text');
+            if (qTextEl) qTextEl.textContent = q.qText;
+            
+            const container = document.getElementById('l6-input-container');
+            if (container) {
+                if (q.type === "to_m_cm") {
+                    container.innerHTML = `
+                        <input type="number" id="ans-m" class="w-14 bg-white border-2 border-slate-200 py-1 text-center font-bold">
+                        <span>公尺</span>
+                        <input type="number" id="ans-cm" class="w-14 bg-white border-2 border-slate-200 py-1 text-center font-bold">
+                        <span>公分</span>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <input type="number" id="ans-mm" class="w-20 bg-white border-2 border-slate-200 py-1 text-center font-bold">
+                        <span>毫米 (mm)</span>
+                    `;
+                }
+            }
+
+            if (uCanvas && uCtx) {
+                uCanvas.width = uCanvas.parentElement.clientWidth;
+                uCanvas.height = uCanvas.parentElement.clientHeight;
+                uCtx.clearRect(0, 0, uCanvas.width, uCanvas.height);
+                uCtx.strokeStyle = '#cbd5e1';
+                uCtx.lineWidth = 1;
+                const col = uCanvas.width / 3;
+                uCtx.beginPath();
+                uCtx.moveTo(col, 0); uCtx.lineTo(col, uCanvas.height);
+                uCtx.moveTo(col*2, 0); uCtx.lineTo(col*2, uCanvas.height);
+                uCtx.stroke();
+
+                if (!isLevel6EventsBound) {
+                    isLevel6EventsBound = true;
+                    uCanvas.addEventListener('mousedown', (e) => { isUnitDrawing = true; [unitLastX, unitLastY] = [e.offsetX, e.offsetY]; });
+                    uCanvas.addEventListener('mousemove', drawUnit);
+                    uCanvas.addEventListener('mouseup', () => isUnitDrawing = false);
+                    uCanvas.addEventListener('mouseout', () => isUnitDrawing = false);
+
+                    uCanvas.addEventListener('touchstart', (e) => {
+                        const rect = uCanvas.getBoundingClientRect();
+                        unitLastX = e.touches[0].clientX - rect.left;
+                        unitLastY = e.touches[0].clientY - rect.top;
+                        isUnitDrawing = true;
+                    }, {passive: true});
+                    uCanvas.addEventListener('touchmove', (e) => {
+                        if (!isUnitDrawing) return;
+                        const rect = uCanvas.getBoundingClientRect();
+                        const x = e.touches[0].clientX - rect.left;
+                        const y = e.touches[0].clientY - rect.top;
+                        
+                        uCtx.beginPath();
+                        uCtx.moveTo(unitLastX, unitLastY);
+                        uCtx.lineTo(x, y);
+                        uCtx.strokeStyle = unitTool === 'pencil' ? '#ec4899' : '#ffffff';
+                        uCtx.lineWidth = unitTool === 'pencil' ? 3 : 15;
+                        uCtx.lineCap = 'round';
+                        uCtx.stroke();
+                        [unitLastX, unitLastY] = [x, y];
+                    }, {passive: true});
+                    uCanvas.addEventListener('touchend', () => isUnitDrawing = false);
+                }
+            }
+        }
+
+        // 第六關畫筆 & 橡皮擦 & 清除事件
+        const btnL6Pencil = document.getElementById('btn-l6-pencil');
+        if (btnL6Pencil) {
+            btnL6Pencil.addEventListener('click', () => {
+                unitTool = 'pencil';
+                btnL6Pencil.className = "flex-grow bg-teal-500 text-white px-3 py-1.5 rounded-xl text-[10px]";
+                const bEraser = document.getElementById('btn-l6-eraser');
+                if (bEraser) bEraser.className = "bg-slate-50 border border-slate-200 text-slate-500 px-3 py-1.5 rounded-xl text-[10px]";
+            });
+        }
+        const btnL6Eraser = document.getElementById('btn-l6-eraser');
+        if (btnL6Eraser) {
+            btnL6Eraser.addEventListener('click', () => {
+                unitTool = 'eraser';
+                const bPencil = document.getElementById('btn-l6-pencil');
+                if (bPencil) bPencil.className = "bg-slate-50 border border-slate-200 text-slate-500 px-3 py-1.5 rounded-xl text-[10px]";
+                btnL6Eraser.className = "flex-grow bg-amber-500 text-white px-3 py-1.5 rounded-xl text-[10px]";
+            });
+        }
+        const btnL6Clear = document.getElementById('btn-l6-clear');
+        if (btnL6Clear) {
+            btnL6Clear.addEventListener('click', () => {
+                if (uCtx && uCanvas) {
+                    uCtx.clearRect(0, 0, uCanvas.width, uCanvas.height);
+                    uCtx.strokeStyle = '#cbd5e1';
+                    uCtx.lineWidth = 1;
+                    const col = uCanvas.width / 3;
+                    uCtx.beginPath();
+                    uCtx.moveTo(col, 0); uCtx.lineTo(col, uCanvas.height);
+                    uCtx.moveTo(col*2, 0); uCtx.lineTo(col*2, uCanvas.height);
+                    uCtx.stroke();
+                }
+            });
+        }
+
+        function drawUnit(e) {
+            if (!isUnitDrawing || !uCanvas || !uCtx) return;
+            const rect = uCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+
+            uCtx.beginPath();
+            uCtx.moveTo(unitLastX, unitLastY);
+            uCtx.lineTo(x, y);
+            uCtx.strokeStyle = unitTool === 'pencil' ? '#ec4899' : '#ffffff';
+            uCtx.lineWidth = unitTool === 'pencil' ? 3 : 15;
+            uCtx.lineCap = 'round';
+            uCtx.stroke();
+            unitLastX = x;
+            unitLastY = y;
+        }
+
+        // 第六關驗證按鈕
+        document.getElementById('btn-verify-level6').addEventListener('click', () => {
+            let isCorrect = false;
+            if (l6AnswerObj.type === "to_m_cm") {
+                const m = parseInt(document.getElementById('ans-m').value);
+                const cm = parseInt(document.getElementById('ans-cm').value);
+                isCorrect = (m === l6AnswerObj.ans.m && cm === l6AnswerObj.ans.cm);
+            } else {
+                const mm = parseInt(document.getElementById('ans-mm').value);
+                isCorrect = (mm === l6AnswerObj.ans.mm);
+            }
+
+            if (isCorrect) {
+                studentInfo.points += 10;
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery.length = Math.min(100, unitMastery.length + 15);
+                updateMasteryChartUI();
+                showModal("長度鎖定！📏", "對齊精確，長度刻度重塑成功！幾何試煉即將到來！", "🎉");
+                setTimeout(() => {
+                    document.getElementById('step-level6').classList.add('hidden');
+                    document.getElementById('step-level7').classList.remove('hidden');
+                    startLevelTimer(7);
+                    initLevel7();
+                }, 1800);
+            } else {
+                levelWrongCounts.l6++;
+                studentInfo.points = Math.max(0, studentInfo.points - 5);
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery.length = Math.max(10, unitMastery.length - 5);
+                updateMasteryChartUI();
+                showModal("法術紊亂...", "換算的長度數值不正確喔，請利用定位板對齊重新算算看！", "❌");
+            }
+        });
+
+        function initLevel7() {
+            l7Width = 8;
+            l7Height = 6;
+            l7RectArea = 48;
+            l7TriangleArea = 24;
+
+            const wEl = document.getElementById('l7-width-text');
+            const hEl = document.getElementById('l7-height-text');
+            if (wEl) wEl.textContent = l7Width;
+            if (hEl) hEl.textContent = l7Height;
+
+            const rAns = document.getElementById('l7-rect-ans');
+            const tAns = document.getElementById('l7-tri-ans');
+            if (rAns) rAns.value = "";
+            if (tAns) tAns.value = "";
+
+            if (gCanvas && gCtx) {
+                gCanvas.width = gCanvas.parentElement.clientWidth;
+                gCanvas.height = gCanvas.parentElement.clientHeight;
+                gCtx.clearRect(0, 0, gCanvas.width, gCanvas.height);
+                gCtx.strokeStyle = '#94a3b8';
+                gCtx.lineWidth = 1;
+                gCtx.setLineDash([2, 2]);
+                gCtx.strokeRect(10, 10, l7Width * 20, l7Height * 20);
+                gCtx.setLineDash([]);
+
+                if (!isLevel7EventsBound) {
+                    isLevel7EventsBound = true;
+                    gCanvas.addEventListener('mousedown', (e) => { isL7Drawing = true; [l7LastX, l7LastY] = [e.offsetX, e.offsetY]; });
+                    gCanvas.addEventListener('mousemove', drawL7);
+                    gCanvas.addEventListener('mouseup', () => isL7Drawing = false);
+                    gCanvas.addEventListener('mouseout', () => isL7Drawing = false);
+
+                    gCanvas.addEventListener('touchstart', (e) => {
+                        const rect = gCanvas.getBoundingClientRect();
+                        l7LastX = e.touches[0].clientX - rect.left;
+                        l7LastY = e.touches[0].clientY - rect.top;
+                        isL7Drawing = true;
+                    }, {passive: true});
+                    gCanvas.addEventListener('touchmove', (e) => {
+                        if (!isL7Drawing) return;
+                        const rect = gCanvas.getBoundingClientRect();
+                        const x = e.touches[0].clientX - rect.left;
+                        const y = e.touches[0].clientY - rect.top;
+                        
+                        gCtx.beginPath();
+                        gCtx.moveTo(l7LastX, l7LastY);
+                        gCtx.lineTo(x, y);
+                        gCtx.strokeStyle = l7Tool === 'pencil' ? '#0ea5e9' : '#ffffff';
+                        gCtx.lineWidth = l7Tool === 'pencil' ? 3 : 15;
+                        gCtx.lineCap = 'round';
+                        gCtx.stroke();
+                        [l7LastX, l7LastY] = [x, y];
+                    }, {passive: true});
+                    gCanvas.addEventListener('touchend', () => isL7Drawing = false);
+                }
+            }
+        }
+
+        // 第七關畫筆 & 橡皮擦 & 清除事件
+        const btnL7Pencil = document.getElementById('btn-l7-pencil');
+        if (btnL7Pencil) {
+            btnL7Pencil.addEventListener('click', () => {
+                l7Tool = 'pencil';
+                btnL7Pencil.className = "flex-grow bg-teal-500 text-white px-3 py-1.5 rounded-xl text-[10px]";
+                const bEraser = document.getElementById('btn-l7-eraser');
+                if (bEraser) bEraser.className = "bg-slate-50 border border-slate-200 text-slate-500 px-3 py-1.5 rounded-xl text-[10px]";
+            });
+        }
+        const btnL7Eraser = document.getElementById('btn-l7-eraser');
+        if (btnL7Eraser) {
+            btnL7Eraser.addEventListener('click', () => {
+                l7Tool = 'eraser';
+                const bPencil = document.getElementById('btn-l7-pencil');
+                if (bPencil) bPencil.className = "bg-slate-50 border border-slate-200 text-slate-550 px-3 py-1.5 rounded-xl text-[10px]";
+                btnL7Eraser.className = "flex-grow bg-amber-500 text-white px-3 py-1.5 rounded-xl text-[10px]";
+            });
+        }
+        const btnL7Clear = document.getElementById('btn-l7-clear');
+        if (btnL7Clear) {
+            btnL7Clear.addEventListener('click', () => {
+                if (gCtx && gCanvas) {
+                    gCtx.clearRect(0, 0, gCanvas.width, gCanvas.height);
+                    gCtx.strokeStyle = '#94a3b8';
+                    gCtx.lineWidth = 1;
+                    gCtx.setLineDash([2, 2]);
+                    gCtx.strokeRect(10, 10, l7Width * 20, l7Height * 20);
+                    gCtx.setLineDash([]);
+                }
+            });
+        }
+
+        function drawL7(e) {
+            if (!isL7Drawing || !gCanvas || !gCtx) return;
+            const rect = gCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+
+            gCtx.beginPath();
+            gCtx.moveTo(l7LastX, l7LastY);
+            gCtx.lineTo(x, y);
+            gCtx.strokeStyle = l7Tool === 'pencil' ? '#0ea5e9' : '#ffffff';
+            gCtx.lineWidth = l7Tool === 'pencil' ? 3 : 15;
+            gCtx.lineCap = 'round';
+            gCtx.stroke();
+            l7LastX = x;
+            l7LastY = y;
+        }
+
+        // 第七關驗證按鈕
+        document.getElementById('btn-verify-level7').addEventListener('click', () => {
+            const tri = parseInt(document.getElementById('l7-tri-ans').value);
+            const rect = parseInt(document.getElementById('l7-rect-ans').value);
+            if (tri === l7TriangleArea && rect === l7RectArea) {
+                studentInfo.points += 10;
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery.geometry = Math.min(100, unitMastery.geometry + 15);
+                updateMasteryChartUI();
+                completedQuiz = true;
+                updateUnlockState();
+                showModal("試煉完成！🏆", "幾何拼圖面積完美保留與守恆！鐘樓時鐘發發條重啟運作！", "🎉");
+                setTimeout(() => {
+                    document.getElementById('step-level7').classList.add('hidden');
+                    document.getElementById('step-victory').classList.remove('hidden');
+                    stopLevelTimer();
+                    
+                    document.getElementById('analysis-time-l1').textContent = `${levelTimes.l1}s`;
+                    document.getElementById('analysis-time-l2').textContent = `${levelTimes.l2}s`;
+                    document.getElementById('analysis-time-l3').textContent = `${levelTimes.l3}s`;
+                    document.getElementById('analysis-time-l4').textContent = `${levelTimes.l4}s`;
+                    document.getElementById('analysis-time-l5').textContent = `${levelTimes.l5}s`;
+                    document.getElementById('analysis-time-l6').textContent = `${levelTimes.l6}s`;
+                    document.getElementById('analysis-time-l7').textContent = `${levelTimes.l7}s`;
+                    
+                    generateDiagnosticsReport();
+                }, 1800);
+            } else {
+                levelWrongCounts.l7++;
+                studentInfo.points = Math.max(0, studentInfo.points - 5);
+                document.getElementById('nav-points').textContent = studentInfo.points;
+                unitMastery.geometry = Math.max(10, unitMastery.geometry - 5);
+                updateMasteryChartUI();
+                showModal("幾何結構失衡...", "總長與切割三角形面積計算不正確喔，請拿出魔法筆多畫一下！", "❌");
+            }
+        });
+
+        // 結算學習評語生成器
+        function generateDiagnosticsReport() {
+            const reportBox = document.getElementById('analysis-diagnostics');
+            if (!reportBox) return;
+            reportBox.innerHTML = "";
+            let totalErrors = 0;
+            Object.values(levelWrongCounts).forEach(cnt => totalErrors += cnt);
+
+            let diagnosticsHTML = `<p class="font-extrabold text-teal-800 text-sm mb-2">✨ 守護導師為小魔法師 ${studentInfo.name} 製作的學習卷軸：</p>`;
+            
+            if (levelWrongCounts.l1 > 0) {
+                diagnosticsHTML += `<p class="text-slate-600">・分數調配：答錯了 ${levelWrongCounts.l1} 次。要特別細心地數清楚格數比例喔！</p>`;
+            } else {
+                diagnosticsHTML += `<p class="text-emerald-700 font-bold">・分數調配：完美無瑕！完全掌握比例分割觀念！</p>`;
+            }
+
+            if (levelWrongCounts.l2 > 0) {
+                diagnosticsHTML += `<p class="text-slate-600">・乘除估算：答錯了 ${levelWrongCounts.l2} 次。估算可以多善用四捨五入魔法！</p>`;
+            } else {
+                diagnosticsHTML += `<p class="text-emerald-700 font-bold">・乘除估算：極度迅速！倍數估算完全沒有答錯！</p>`;
+            }
+
+            if (levelWrongCounts.l3 > 0) {
+                diagnosticsHTML += `<p class="text-slate-600">・時鐘經過：答錯了 ${levelWrongCounts.l3} 次。分針每跨一大格代表5分鐘！</p>`;
+            } else {
+                diagnosticsHTML += `<p class="text-emerald-700 font-bold">・時鐘經過：對時間變化及分針累積具備敏銳直覺！</p>`;
+            }
+
+            if (levelWrongCounts.l4 > 0) {
+                diagnosticsHTML += `<p class="text-slate-600">・加減運算：答錯了 ${levelWrongCounts.l4} 次。請多標記進退位記號以免遺落！</p>`;
+            } else {
+                diagnosticsHTML += `<p class="text-emerald-700 font-bold">・加減運算：計算精度非常驚人！</p>`;
+            }
+
+            if (levelWrongCounts.l5 > 0) {
+                diagnosticsHTML += `<p class="text-slate-600">・角辨識：答錯了 ${levelWrongCounts.l5} 次。角的大小只看張開開口，跟邊長無關！</p>`;
+            } else {
+                diagnosticsHTML += `<p class="text-emerald-700 font-bold">・角辨識：完美秒殺！直角鈍角銳角定義理解深厚！</p>`;
+            }
+
+            if (totalErrors === 0) {
+                diagnosticsHTML += `<p class="mt-4 font-black text-amber-500 animate-pulse">👑 貓頭鷹導師總結：零答錯完美通關！你擁有成為至高賢者的驚人潛能！✨</p>`;
+            } else {
+                diagnosticsHTML += `<p class="mt-4 font-black text-pink-500">🔮 貓頭鷹導師總結：很棒的嘗試！多使用草稿板練習，實力一定會更上一層樓！💪</p>`;
+            }
+
+            reportBox.innerHTML = diagnosticsHTML;
+        }
+
+        // Potion 與 Clock 介面渲染更新邏輯
+        function updatePotionUI() {
+            let activeCount = 0;
+            const segs = document.querySelectorAll('.potion-segment');
+            segs.forEach(seg => {
+                const idx = parseInt(seg.getAttribute('data-index'));
+                if (pPotionSegs[idx] === 1) {
+                    seg.style.backgroundColor = '#ec4899';
+                    seg.style.color = '#ffffff';
+                    activeCount++;
+                } else {
+                    seg.style.backgroundColor = 'transparent';
+                    seg.style.color = '#94a3b8';
+                }
+            });
+            const fractionEl = document.getElementById('potion-fraction');
+            if (fractionEl) {
+                fractionEl.textContent = `${activeCount} / ${l1CurrentDenominator} 瓶`;
+            }
+        }
+
+        function updateClockUI() {
+            if (clockDisplay) clockDisplay.textContent = `${l3Hour} 點 ${l3Minute} 分`;
+            if (ansHourInput) ansHourInput.value = l3Hour;
+            if (ansMinInput) ansMinInput.value = l3Minute;
+
+            if (minuteHand && hourHand) {
+                const minAngle = l3Minute * 6;
+                const hrAngle = (l3Hour % 12) * 30 + (l3Minute * 0.5);
+                minuteHand.style.transform = `rotate(${minAngle}deg)`;
+                hourHand.style.transform = `rotate(${hrAngle}deg)`;
+            }
+        }
+
+        // 重啟/再次挑戰
+        document.getElementById('btn-restart').addEventListener('click', () => {
+            studentInfo.points = 0;
+            levelTimes = { l1: 0, l2: 0, l3: 0, l4: 0, l5: 0, l6: 0, l7: 0 };
+            levelWrongCounts = { l1: 0, l2: 0, l3: 0, l4: 0, l5: 0, l6: 0, l7: 0 };
+            document.getElementById('nav-points').textContent = "0";
+
+            document.getElementById('step-victory').classList.add('hidden');
+            document.getElementById('panel-game-container').classList.add('hidden');
+            document.getElementById('panel-dashboard').classList.remove('hidden');
+        });
+
+        // AI 結尾對話發送綁定
+        const btnSendMessage = document.getElementById('btn-send-message');
+        if (btnSendMessage) {
+            btnSendMessage.addEventListener('click', async () => {
+                const input = document.getElementById('ai-user-input');
+                const text = input.value.trim();
+                if (!text) return;
+
+                const chatBox = document.getElementById('ai-chat-box');
+                const userDiv = document.createElement('div');
+                userDiv.className = "flex items-start space-x-2";
+                userDiv.innerHTML = `<div class="w-6 h-6 rounded-full bg-pink-100 flex items-center justify-center text-xs">🧙</div><div class="bg-white border p-3 rounded-2xl max-w-[85%]">${text}</div>`;
+                chatBox.appendChild(userDiv);
+                input.value = "";
+
+                const loadDiv = document.createElement('div');
+                loadDiv.className = "flex items-start space-x-2";
+                loadDiv.innerHTML = `<div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs">🦉</div><div class="bg-white border p-3 rounded-2xl max-w-[85%] italic text-slate-400">正在思考答覆中...</div>`;
+                chatBox.appendChild(loadDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                try {
+                    const aiResult = await getSocraticResponse(text);
+                    loadDiv.remove();
+                    const aiDiv = document.createElement('div');
+                    aiDiv.className = "flex items-start space-x-2";
+                    aiDiv.innerHTML = `<div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs">🦉</div><div class="bg-white border p-3 rounded-2xl max-w-[85%]">${aiResult.replace(/\n/g, '<br>')}</div>`;
+                    chatBox.appendChild(aiDiv);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                } catch (e) {
+                    loadDiv.remove();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
